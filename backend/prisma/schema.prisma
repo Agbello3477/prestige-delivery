@@ -1,0 +1,231 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  RIDER
+  CUSTOMER
+  PARTNER
+}
+
+enum DeliveryStatus {
+  PENDING
+  ACCEPTED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  FAILED
+}
+
+enum PartnerType {
+  FOOD
+  ECOMMERCE
+  PHARMACY
+  AUTOMOBILE
+}
+
+enum VendorOrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY_FOR_PICKUP
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  TRANSFER
+  POS
+}
+
+model User {
+  id         Int     @id @default(autoincrement())
+  email      String  @unique
+  password   String
+  name       String
+  role       Role    @default(CUSTOMER)
+  phone      String?
+  isVerified Boolean @default(false) // For Riders
+  isOnline   Boolean @default(false) // Rider availability status
+  lastLat    Float? // Real-time latitude
+  lastLng    Float? // Real-time longitude
+  pushToken  String? // Expo Push Notification Token
+
+  // Rider Specific Fields
+  nin               String?
+  address           String?
+  stateOfOrigin     String?
+  passportUrl       String?
+  ninSlipUrl        String?
+  isBikeOwner       Boolean   @default(false)
+  isRejected        Boolean   @default(false)
+  rejectionReason   String?
+  isBlocked         Boolean   @default(false)
+  isSuspended       Boolean   @default(false)
+  suspensionEndDate DateTime?
+  rating            Float? // Average Rating (e.g. 4.5)
+  ratingCount       Int       @default(0) // Total number of ratings
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicles             Vehicle[]
+  deliveriesAsRider    Delivery[] @relation("RiderDeliveries")
+  deliveriesAsCustomer Delivery[] @relation("CustomerDeliveries")
+
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  partnerProfile PartnerProfile?
+}
+
+model PartnerProfile {
+  id               Int         @id @default(autoincrement())
+  userId           Int         @unique
+  user             User        @relation(fields: [userId], references: [id])
+  partnerType      PartnerType
+  businessName     String
+  address          String?
+  agreedPercentage Float? // Commision/Split for Automobiles
+  isActive         Boolean     @default(true)
+
+  menuItems    MenuItem[]
+  vendorOrders VendorOrder[]
+  vehicles     Vehicle[] // Fleets provided by the Partner
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuItem {
+  id          Int            @id @default(autoincrement())
+  partnerId   Int
+  partner     PartnerProfile @relation(fields: [partnerId], references: [id])
+  name        String
+  description String?
+  price       Decimal
+  imageUrl    String?
+  isAvailable Boolean        @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VendorOrder {
+  id         Int               @id @default(autoincrement())
+  partnerId  Int
+  partner    PartnerProfile    @relation(fields: [partnerId], references: [id])
+  customerId Int
+  status     VendorOrderStatus @default(PENDING)
+
+  // JSON array mapping the requested MenuItems/Prescriptions:
+  // e.g., [{ menuItemId: 1, quantity: 2, price: 5000 }, ...]
+  items Json
+
+  prescriptionUrl String? // Specific to Pharmacy
+  totalAmount     Decimal
+
+  deliveryOption  String  @default("PICKUP") // "PICKUP" or "DELIVERY"
+  deliveryFee     Decimal?
+  deliveryAddress String?
+
+  deliveryId String?   @unique // Linked once a rider is dispatched
+  delivery   Delivery? @relation(fields: [deliveryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vehicle {
+  id            Int             @id @default(autoincrement())
+  type          String // Bike, Car, Van
+  plateNumber   String?         @unique // Made optional if requesting bike
+  model         String?
+  chassisNumber String?
+  riderId       Int? // Can be null if it's assigned to a partner instead of a specific rider yet
+  rider         User?           @relation(fields: [riderId], references: [id])
+  partnerId     Int? // For Automobile Fleet
+  partner       PartnerProfile? @relation(fields: [partnerId], references: [id])
+}
+
+model State {
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  isActive       Boolean         @default(false) // For expansion logic
+  geofence       Json? // Store geo-coordinates/polygons
+  pricingModules PricingModule[]
+}
+
+model PricingModule {
+  id        Int     @id @default(autoincrement())
+  baseFare  Decimal
+  perKmRate Decimal
+  stateId   Int
+  state     State   @relation(fields: [stateId], references: [id])
+}
+
+model Delivery {
+  id             String         @id @default(uuid())
+  trackingNumber String?        @unique // Human readable ID (e.g. ORD-1234)
+  pickupAddress  String
+  pickupLat      Float?
+  pickupLng      Float?
+  dropoffAddress String
+  dropoffLat     Float?
+  dropoffLng     Float?
+  status         DeliveryStatus @default(PENDING)
+  paymentMethod  PaymentMethod  @default(COD)
+  price          Decimal?
+  distanceKm     Float?
+  rating         Int? // 1-5 Star Rating received for this specific trip
+
+  customerId Int
+  customer   User @relation("CustomerDeliveries", fields: [customerId], references: [id])
+
+  riderId Int?
+  rider   User? @relation("RiderDeliveries", fields: [riderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trackingLogs TrackingLog[]
+  proofType    ProofType?
+  proofUrl     String?
+
+  vendorOrder VendorOrder?
+}
+
+enum ProofType {
+  SIGNATURE
+  VIDEO
+}
+
+model TrackingLog {
+  id         Int      @id @default(autoincrement())
+  deliveryId String
+  delivery   Delivery @relation(fields: [deliveryId], references: [id])
+  lat        Float
+  lng        Float
+  timestamp  DateTime @default(now())
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  content    String
+  timestamp  DateTime @default(now())
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}

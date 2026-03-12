@@ -1,0 +1,318 @@
+import { Request, Response } from 'express';
+import prisma from '../lib/prisma';
+import { Role, DeliveryStatus } from '@prisma/client';
+import { generateToken, hashPassword } from '../utils/auth';
+import { io } from '../socket';
+import { sendPushNotification } from '../services/notificationService';
+import { z } from 'zod';
+
+const registerPartnerSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    name: z.string().min(2),
+    phone: z.string().optional(),
+    partnerType: z.enum(['FOOD', 'ECOMMERCE', 'PHARMACY', 'AUTOMOBILE']),
+    businessName: z.string().min(2),
+    address: z.string().optional(),
+    agreedPercentage: z.number().optional()
+});
+
+export const createPartner = async (req: Request, res: Response) => {
+    try {
+        const { email, password, name, phone, partnerType, businessName, address, agreedPercentage } = registerPartnerSchema.parse(req.body);
+
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        const hashedPassword = await hashPassword(password);
+        const user = await prisma.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                name,
+                role: Role.PARTNER,
+                phone,
+                isVerified: true, // Partners created by Admin are auto-verified
+                partnerProfile: {
+                    create: {
+                        partnerType,
+                        businessName,
+                        address,
+                        agreedPercentage
+                    }
+                }
+            },
+            include: {
+                partnerProfile: true
+            }
+        });
+
+        const token = generateToken({ id: user.id, email: user.email, role: user.role });
+        res.status(201).json({ message: 'Partner created successfully', user });
+    } catch (error: any) {
+        res.status(400).json({ message: 'Failed to create partner', error: error.message });
+    }
+};
+
+export const getPartners = async (req: Request, res: Response) => {
+    try {
+        const partners = await prisma.user.findMany({
+            where: { role: Role.PARTNER },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                createdAt: true,
+                isVerified: true,
+                partnerProfile: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(partners);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error fetching partners', error: error.message });
+    }
+};
+
+export const getPublicPartners = async (req: Request, res: Response) => {
+    try {
+        const { type } = req.query;
+        let whereClause: any = {};
+
+        if (type) {
+            whereClause = {
+                partnerProfile: {
+                    partnerType: type as string
+                }
+            };
+        }
+
+        const partners = await prisma.user.findMany({
+            where: {
+                role: 'PARTNER',
+                ...whereClause
+            },
+            select: {
+                id: true,
+                name: true,
+                partnerProfile: {
+                    select: {
+                        id: true,
+                        businessName: true,
+                        partnerType: true,
+                        address: true
+                    }
+                }
+            }
+        });
+
+        res.json(partners);
+    } catch (error: any) {
+        console.error('Error fetching public partners:', error);
+        res.status(500).json({ message: 'Failed to fetch partners', error: error.message });
+    }
+};
+
+// ==========================================
+// PARTNER VENDOR MENU ITEMS
+// ==========================================
+
+export const addMenuItem = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+
+        const profile = await prisma.partnerProfile.findUnique({
+            where: { userId }
+        });
+
+        if (!profile) return res.status(404).json({ message: 'Partner profile not found.' });
+
+        const { name, description, price, imageUrl } = req.body;
+
+        const menuItem = await prisma.menuItem.create({
+            data: {
+                partnerId: profile.id,
+                name,
+                description,
+                price: price.toString(),
+                imageUrl
+            }
+        });
+
+        res.status(201).json(menuItem);
+    } catch (error: any) {
+        console.error('Error creating menu item:', error);
+        res.status(500).json({ message: 'Failed to create menu item', error: error.message });
+    }
+};
+
+export const getMenuItems = async (req: Request, res: Response) => {
+    try {
+        const { partnerId } = req.params;
+
+        const menuItems = await prisma.menuItem.findMany({
+            where: { partnerId: parseInt(partnerId as string) }
+        });
+
+        res.json(menuItems);
+    } catch (error: any) {
+        console.error('Error fetching menu items:', error);
+        res.status(500).json({ message: 'Failed to fetch menu items', error: error.message });
+    }
+};
+
+export const getMyMenuItems = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+
+        const profile = await prisma.partnerProfile.findUnique({
+            where: { userId }
+        });
+
+        if (!profile) return res.status(404).json({ message: 'Partner profile not found.' });
+
+        const menuItems = await prisma.menuItem.findMany({
+            where: { partnerId: profile.id }
+        });
+
+        res.json(menuItems);
+    } catch (error: any) {
+        console.error('Error fetching my menu items:', error);
+        res.status(500).json({ message: 'Failed to fetch my menu items', error: error.message });
+    }
+};
+
+// ==========================================
+// VENDOR ORDERS
+// ==========================================
+
+export const createVendorOrder = async (req: Request, res: Response) => {
+    try {
+        const customerId = (req as any).user.id;
+        const { partnerId, items, prescriptionUrl, totalAmount, deliveryOption, deliveryAddress, deliveryFee } = req.body;
+
+        const order = await prisma.vendorOrder.create({
+            data: {
+                partnerId: parseInt(partnerId),
+                customerId,
+                items,
+                prescriptionUrl,
+                totalAmount: totalAmount.toString(),
+                deliveryOption: deliveryOption || 'PICKUP',
+                deliveryAddress: deliveryAddress || null,
+                deliveryFee: deliveryFee ? deliveryFee.toString() : null
+            },
+            include: { partner: true }
+        });
+
+        // Trigger Delivery creation if DELIVERY is selected
+        if (order.deliveryOption === 'DELIVERY') {
+            const partnerAddress = order.partner.address || 'Vendor Location';
+            
+            const delivery = await prisma.delivery.create({
+                data: {
+                    pickupAddress: partnerAddress,
+                    dropoffAddress: deliveryAddress || 'Customer Location',
+                    customerId,
+                    status: DeliveryStatus.PENDING,
+                    price: deliveryFee || 1200
+                }
+            });
+
+            await prisma.vendorOrder.update({
+                where: { id: order.id },
+                data: { deliveryId: delivery.id }
+            });
+        }
+
+        res.status(201).json(order);
+    } catch (error: any) {
+        console.error('Error creating vendor order:', error);
+        res.status(500).json({ message: 'Failed to create vendor order', error: error.message });
+    }
+};
+
+export const getVendorOrders = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+
+        const profile = await prisma.partnerProfile.findUnique({
+            where: { userId }
+        });
+
+        if (!profile) return res.status(404).json({ message: 'Partner profile not found.' });
+
+        const orders = await prisma.vendorOrder.findMany({
+            where: { partnerId: profile.id },
+            include: {
+                delivery: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        res.json(orders);
+    } catch (error: any) {
+        console.error('Error fetching vendor orders:', error);
+        res.status(500).json({ message: 'Failed to fetch vendor orders', error: error.message });
+    }
+};
+
+export const updateVendorOrderStatus = async (req: Request, res: Response) => {
+    try {
+        const { orderId } = req.params;
+        const { status } = req.body; // PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, COMPLETED, CANCELLED
+
+        const order = await prisma.vendorOrder.update({
+            where: { id: parseInt(orderId as string) },
+            data: { status },
+            include: {
+                partner: { select: { businessName: true } }
+            }
+        });
+
+        // Fetch customer explicitly since it lacks a direct relation on VendorOrder
+        const customer = await prisma.user.findUnique({
+            where: { id: order.customerId },
+            select: { id: true, pushToken: true }
+        });
+
+        // Emit Socket.io event for real-time app update
+        if (io) {
+            io.to(order.customerId.toString()).emit('vendor_order_status', {
+                orderId: order.id,
+                status: order.status,
+                vendorName: order.partner.businessName
+            });
+        }
+
+        // Send Push Notification
+        if (customer?.pushToken) {
+            const messages: any = {
+                'ACCEPTED': `Your order from ${order.partner.businessName} has been confirmed!`,
+                'PREPARING': `Your order from ${order.partner.businessName} is being prepared.`,
+                'READY_FOR_PICKUP': order.deliveryOption === 'DELIVERY' 
+                    ? `Your order from ${order.partner.businessName} is ready and waiting for a rider.`
+                    : `Your order from ${order.partner.businessName} is ready for pickup!`,
+                'COMPLETED': `Enjoy your order from ${order.partner.businessName}!`
+            };
+
+            const bodyMsg = messages[status];
+            if (bodyMsg) {
+                await sendPushNotification(
+                    [customer.pushToken],
+                    "Order Update 🍲",
+                    bodyMsg,
+                    { type: 'VENDOR_ORDER', orderId: order.id, status }
+                );
+            }
+        }
+
+        res.json(order);
+    } catch (error: any) {
+        console.error('Error updating vendor order:', error);
+        res.status(500).json({ message: 'Failed to update vendor order', error: error.message });
+    }
+};
