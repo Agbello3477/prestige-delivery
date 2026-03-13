@@ -1,0 +1,40 @@
+name: Deploy Web Dashboard to Firebase
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'admin-dashboard/**'
+      - '.github/workflows/deploy-web.yml'
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/checkout@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: |
+          cd admin-dashboard
+          npm install
+
+      - name: Build Dashboard
+        run: |
+          cd admin-dashboard
+          npm run build
+
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PRESTIGE_DELIVERY }}"
+          channelId: live
+          projectId: prestige-delivery
+          entryPoint: admin-dashboard
