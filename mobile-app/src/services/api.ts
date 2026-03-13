@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
 
-// Use 172.20.10.2 (Current LAN IP)
-export const BACKEND_URL = 'http://172.20.10.2:4000';
+// Use production URL if deployed, otherwise fall back to local LAN IP
+const PRODUCTION_URL = 'https://prestige-delivery-backend.onrender.com'; // Placeholder for Render URL
+export const BACKEND_URL = PRODUCTION_URL || 'http://172.20.10.2:4000';
 const BASE_URL = `${BACKEND_URL}/api`;
 
 const api = axios.create({

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: prestige-delivery-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_URL
+        fromDatabase:
+          name: prestige-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: prestige-db
+    plan: free
+    databaseName: prestige_delivery
+    user: prestige_admin

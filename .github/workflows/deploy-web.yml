@@ -29,6 +29,8 @@ jobs:
         run: |
           cd admin-dashboard
           npm run build
+        env:
+          VITE_API_URL: "https://prestige-delivery-backend.onrender.com/api"
 
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
