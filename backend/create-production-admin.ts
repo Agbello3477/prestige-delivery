@@ -9,12 +9,32 @@ if (!connectionString) {
     process.exit(1);
 }
 
-const pool = new Pool({ connectionString });
+const pool = new Pool({ 
+    connectionString,
+    ssl: {
+        rejectUnauthorized: false // Required for Render Postgres
+    }
+});
+
+// Test connection first
+async function testConnection() {
+    try {
+        const client = await pool.connect();
+        console.log('✅ Connection test successful!');
+        client.release();
+    } catch (err: any) {
+        console.error('❌ Database Connection Failed:', err.message);
+        console.error('Hint: Make sure you copied the "External Database URL" from Render.');
+        process.exit(1);
+    }
+}
+
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-    // CHANGE THESE TO YOUR DESIRED CREDENTIALS
+    await testConnection();
+    // ... rest of the code ...
     const email = 'admin@prestige.com'; 
     const password = 'your_secure_password';
     const name = 'Admin User';

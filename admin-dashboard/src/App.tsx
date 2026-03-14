@@ -42,11 +42,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <Register />
-              </ProtectedRoute>
-            } />
+            <Route path="/register" element={<Register />} />
             {/* <Route path="/partners" element={<PartnersPage />} /> */}
 
             <Route path="/dashboard" element={
