@@ -3,7 +3,7 @@ import { LayoutDashboard, Package, LogOut, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const PartnerSidebar = () => {
-    const { logoutUser } = useAuth();
+    const { logoutUser, user } = useAuth();
 
     // In the future, we can restrict icons based on user.partnerProfile.partnerType
 
@@ -26,7 +26,16 @@ const PartnerSidebar = () => {
                     Incoming Orders
                 </NavLink>
             </nav>
-            <div className="p-4 border-t border-gray-700">
+            <div className="p-4 border-t border-gray-700 bg-black/20">
+                <div className="flex items-center space-x-3 mb-4 px-2">
+                    <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">
+                        {user?.name?.charAt(0).toUpperCase() || 'P'}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <p className="text-sm font-semibold text-white truncate">{user?.name || 'Partner'}</p>
+                        <p className="text-xs text-gray-400 font-medium">{user?.role || 'PARTNER'}</p>
+                    </div>
+                </div>
                 <button
                     onClick={logoutUser}
                     className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"

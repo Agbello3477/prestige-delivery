@@ -3,7 +3,7 @@ import { LayoutDashboard, Users, Package, Settings, LogOut, MessageSquare } from
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
-    const { logoutUser } = useAuth();
+    const { logoutUser, user } = useAuth();
 
 
 
@@ -46,7 +46,16 @@ const Sidebar = () => {
                     Settings
                 </NavLink>
             </nav>
-            <div className="p-4 border-t border-brand-600">
+            <div className="p-4 border-t border-brand-600 bg-brand-950/30">
+                <div className="flex items-center space-x-3 mb-4 px-2">
+                    <div className="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                        {user?.name?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <p className="text-sm font-semibold text-white truncate">{user?.name || 'Admin'}</p>
+                        <p className="text-xs text-brand-300 font-medium">{user?.role || 'ADMIN'}</p>
+                    </div>
+                </div>
                 <button
                     onClick={logoutUser}
                     className="flex items-center w-full px-4 py-2 text-sm font-medium text-brand-100 rounded-lg hover:bg-brand-600 transition-colors"
