@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { register } from '../services/auth.service';
 import Logo from '../components/Logo';
 import Footer from '../components/Footer';
@@ -12,7 +12,7 @@ const Register = () => {
         email: '',
         password: '',
         phone: '',
-        role: 'CUSTOMER' // Default role
+        role: 'PARTNER' // New default for internal registration
     });
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -38,10 +38,10 @@ const Register = () => {
                     <div className="flex flex-col items-center">
                         <Logo className="mb-6" />
                         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                            Create your account
+                            Add New Account
                         </h2>
                         <p className="mt-2 text-center text-sm text-gray-600">
-                            Or <Link to="/login" className="font-medium text-brand-600 hover:text-brand-500">sign in to your account</Link>
+                            Register a new Administrator or Partner for the dashboard.
                         </p>
                     </div>
                     <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -88,8 +88,8 @@ const Register = () => {
                                     value={formData.role}
                                     onChange={handleChange}
                                 >
-                                    <option value="CUSTOMER">Customer</option>
-                                    <option value="RIDER">Rider</option>
+                                    <option value="PARTNER">Partner / Vendor</option>
+                                    <option value="ADMIN">System Administrator</option>
                                 </select>
                             </div>
                             <div>
@@ -110,7 +110,7 @@ const Register = () => {
                                 type="submit"
                                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
                             >
-                                Sign up
+                                Create Account
                             </button>
                         </div>
                     </form>

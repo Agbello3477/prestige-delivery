@@ -69,8 +69,8 @@ const Login = () => {
                             <div className="flex items-baseline justify-between">
                                 <button type="submit" className="px-6 py-2 mt-4 text-white bg-blue-600 rounded-lg hover:bg-blue-900 w-full">Login</button>
                             </div>
-                            <div className="mt-4 text-center">
-                                <Link to="/" className="text-sm text-blue-600 hover:underline">Back to Home</Link>
+                            <div className="mt-6 text-center">
+                                <Link to="/" className="text-sm text-gray-500 hover:text-brand-600 transition">Back to Home</Link>
                             </div>
                         </div>
                     </form>

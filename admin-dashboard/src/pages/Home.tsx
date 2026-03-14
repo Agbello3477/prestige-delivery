@@ -11,8 +11,7 @@ const Home = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
                     <Logo />
                     <div className="space-x-4">
-                        <Link to="/login" className="text-gray-500 hover:text-gray-900 font-medium">Log in</Link>
-                        <Link to="/register" className="bg-brand-600 text-white px-4 py-2 rounded-md hover:bg-brand-700 font-medium">Sign up</Link>
+                        <Link to="/login" className="bg-brand-600 text-white px-6 py-2 rounded-md hover:bg-brand-700 font-medium transition shadow-sm">Log in</Link>
                     </div>
                 </div>
             </header>
@@ -32,13 +31,8 @@ const Home = () => {
                                 </p>
                                 <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
                                     <div className="rounded-md shadow">
-                                        <Link to="/register" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 md:py-4 md:text-lg md:px-10">
-                                            Get started
-                                        </Link>
-                                    </div>
-                                    <div className="mt-3 sm:mt-0 sm:ml-3">
-                                        <Link to="/login" className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-brand-700 bg-brand-100 hover:bg-brand-200 md:py-4 md:text-lg md:px-10">
-                                            Login
+                                        <Link to="/login" className="w-full flex items-center justify-center px-12 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 md:py-4 md:text-lg md:px-14 shadow-md transition">
+                                            Go to Dashboard
                                         </Link>
                                     </div>
                                 </div>
