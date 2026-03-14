@@ -44,5 +44,5 @@ jobs:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
           firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PRESTIGE_DELIVERY }}"
           channelId: live
-          projectId: prestige-delivery
+          projectId: prestige-delivery-89e31
           entryPoint: admin-dashboard
