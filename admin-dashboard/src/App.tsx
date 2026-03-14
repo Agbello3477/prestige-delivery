@@ -1,4 +1,4 @@
-// import React from 'react';
+// Main App component for Prestige Delivery Admin Dashboard
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
