@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login } from '../controllers/authController';
+import { register, login, updateStatus, savePushToken } from '../controllers/authController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
 import { Role } from '@prisma/client';
 
@@ -145,8 +145,6 @@ router.post('/login', login);
  *       200:
  *         description: Status updated
  */
-import { authenticate } from '../middleware/authMiddleware';
-import { updateStatus, savePushToken } from '../controllers/authController';
 router.patch('/status', authenticate, updateStatus);
 
 /**
