@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Package, Clock, CheckCircle } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 
 interface OrderItem {
     name: string;

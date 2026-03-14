@@ -25,7 +25,6 @@ const PartnerMenuPage = () => {
         imageUrl: ''
     });
 
-    const { user } = useAuth();
 
     useEffect(() => {
         fetchMenuItems();
