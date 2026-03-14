@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getDeliveries } from '../services/delivery.service';
+import { BASE_URL } from '../services/api';
 import type { Delivery } from '../services/delivery.service';
 import { Search, MapPin, Calendar, User, FileText, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -134,13 +135,13 @@ const DeliveriesPage = () => {
                         <div className="p-4 bg-gray-50 flex justify-center items-center min-h-[300px]">
                             {selectedPOD.type === 'VIDEO' ? (
                                 <video
-                                    src={`http://localhost:4000/${selectedPOD.url.replace(/\\/g, '/')}`}
+                                    src={`${BASE_URL}/${selectedPOD.url.replace(/\\/g, '/')}`}
                                     controls
                                     className="max-w-full max-h-[60vh] rounded"
                                 />
                             ) : (
                                 <img
-                                    src={selectedPOD.url.startsWith('data:') ? selectedPOD.url : `http://localhost:4000/${selectedPOD.url.replace(/\\/g, '/')}`}
+                                    src={selectedPOD.url.startsWith('data:') ? selectedPOD.url : `${BASE_URL}/${selectedPOD.url.replace(/\\/g, '/')}`}
                                     alt="Proof of Delivery"
                                     className="max-w-full max-h-[60vh] rounded shadow-sm"
                                 />

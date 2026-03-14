@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getRiders, verifyRider, assignBikeToRider, notifyRiderNoBike, declineRider, getRiderAnalytics, suspendRider, blockRider, liftSuspension } from '../services/rider.service';
+import { BASE_URL } from '../services/api';
 import type { Rider } from '../services/rider.service';
 import { CheckCircle, Search, X, Star, Ban, Clock, Play } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -333,9 +334,9 @@ const RidersPage = () => {
                                     {selectedRider.passportUrl ? (
                                         <div
                                             className="w-full h-48 cursor-pointer relative group rounded-lg overflow-hidden border bg-gray-50"
-                                            onClick={() => setEnlargedImage(`http://localhost:4000/${selectedRider.passportUrl!.replace(/\\/g, '/')}`)}
+                                            onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.passportUrl!.replace(/\\/g, '/')}`)}
                                         >
-                                            <img src={`http://localhost:4000/${selectedRider.passportUrl.replace(/\\/g, '/')}`} alt="Passport" className="w-full h-full object-cover" />
+                                            <img src={`${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}`} alt="Passport" className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                                                 <Search className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </div>
@@ -349,9 +350,9 @@ const RidersPage = () => {
                                     {selectedRider.ninSlipUrl ? (
                                         <div
                                             className="w-full h-48 cursor-pointer relative group rounded-lg overflow-hidden border bg-gray-50"
-                                            onClick={() => setEnlargedImage(`http://localhost:4000/${selectedRider.ninSlipUrl!.replace(/\\/g, '/')}`)}
+                                            onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.ninSlipUrl!.replace(/\\/g, '/')}`)}
                                         >
-                                            <img src={`http://localhost:4000/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}`} alt="NIN Slip" className="w-full h-full object-cover" />
+                                            <img src={`${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}`} alt="NIN Slip" className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                                                 <Search className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </div>
