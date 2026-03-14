@@ -1,27 +1,41 @@
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { useEffect, useState } from 'react';
+import api from '../services/api';
 
 const API_KEY = 'AIzaSyBMQRMt57PLMW4UIS5-9q46YwhjdaXxw0I';
 const KANO_CENTER = { lat: 12.0022, lng: 8.5920 };
 
-const IntelligentMap = () => {
-    // Mock Rider Locations
-    const [riders, setRiders] = useState([
-        { id: 1, name: 'Sani Abba', lat: 11.9900, lng: 8.5800, status: 'Active' },
-        { id: 2, name: 'Musa Ibrahim', lat: 12.0100, lng: 8.6000, status: 'Idle' },
-        { id: 3, name: 'Fatima Yusuf', lat: 11.9800, lng: 8.5500, status: 'Active' }
-    ]);
+interface RiderLocation {
+    id: number;
+    name: string;
+    lastLat: number;
+    lastLng: number;
+    vehicles: { type: string; plateNumber: string }[];
+}
 
-    // Simulate movement
+const IntelligentMap = () => {
+    const [riders, setRiders] = useState<RiderLocation[]>([]);
+
+    // Fetch on mount and set up a slow poll (e.g., every 30s) instead of a fast interval
     useEffect(() => {
-        const interval = setInterval(() => {
-            setRiders(prevRiders => prevRiders.map(rider => ({
-                ...rider,
-                lat: rider.lat + (Math.random() - 0.5) * 0.001,
-                lng: rider.lng + (Math.random() - 0.5) * 0.001
-            })));
-        }, 3000);
-        return () => clearInterval(interval);
+        let isMounted = true;
+        
+        const loadRiders = async () => {
+            try {
+                const response = await api.get('/users/online-riders');
+                if (isMounted) setRiders(response.data);
+            } catch (error) {
+                console.error('Failed to fetch online riders:', error);
+            }
+        };
+
+        loadRiders();
+        const interval = setInterval(loadRiders, 30000);
+        
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     return (
@@ -34,7 +48,11 @@ const IntelligentMap = () => {
                 disableDefaultUI={true}
             >
                 {riders.map(rider => (
-                    <Marker key={rider.id} position={{ lat: rider.lat, lng: rider.lng }} title={rider.name} />
+                    <Marker 
+                        key={rider.id} 
+                        position={{ lat: rider.lastLat, lng: rider.lastLng }} 
+                        title={`${rider.name} (${rider.vehicles[0]?.plateNumber || 'No Plate'})`} 
+                    />
                 ))}
             </Map>
         </APIProvider>

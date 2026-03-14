@@ -33,12 +33,14 @@ import deliveryRoutes from './routes/deliveryRoutes';
 import partnerRoutes from './routes/partnerRoutes';
 import userRoutes from './routes/userRoutes';
 import chatRoutes from './routes/chatRoutes';
+import statsRoutes from './routes/statsRoutes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/partners', partnerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/stats', statsRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Prestige Logistics API is running' });
