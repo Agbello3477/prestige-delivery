@@ -11,7 +11,7 @@ A comprehensive logistics platform featuring a Mobile App (Riders/Customers), an
 ## Live Environments
 
 - **API Backend**: https://prestige-delivery-backend.onrender.com
-- **Web Dashboard**: https://prestige-delivery.web.app
+- **Web Dashboard**: https://prestige-delivery-89e31.web.app
 
 ## Development
 
