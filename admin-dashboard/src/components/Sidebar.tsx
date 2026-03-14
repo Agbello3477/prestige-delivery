@@ -25,6 +25,10 @@ const Sidebar = () => {
                     <Users className="w-5 h-5 mr-3" />
                     Partners
                 </NavLink>
+                <NavLink to="/register" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
+                    <Users className="w-5 h-5 mr-3" />
+                    Add Account
+                </NavLink>
                 <NavLink to="/dashboard/deliveries" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
                     <Package className="w-5 h-5 mr-3" />
                     Deliveries
