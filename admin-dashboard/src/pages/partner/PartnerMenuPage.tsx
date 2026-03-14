@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { Plus, Trash2, Edit2, Image as ImageIcon } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 
 interface MenuItem {
     id: number;
