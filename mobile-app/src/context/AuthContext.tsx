@@ -96,14 +96,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Axios will set it automatically with the correct boundary.
             const headers: any = isFormData ? {} : { 'Content-Type': 'application/json' };
 
-            // FIXED: Using the shared api instance again but explicitly overriding Authorization.
-            // This is safer and avoids the "Network Error" caused by raw axios configuration differences.
-            await api.post('/auth/register', data, { 
-                headers: {
-                    ...headers,
-                    Authorization: undefined
-                }
-            });
+            // FIXED: Using a request config object to explicitly control headers.
+            const config: any = {
+                headers: { ...headers }
+            };
+
+            // Ensure Authorization is COMPLETELY removed for this public request
+            if (config.headers.Authorization) delete config.headers.Authorization;
+            if (api.defaults.headers.common['Authorization']) {
+                // For this specific call, we want to ensure common headers don't leak
+                config.transformRequest = [(data: any, requestHeaders: any) => {
+                    delete requestHeaders.common['Authorization'];
+                    delete requestHeaders['Authorization'];
+                    return data;
+                }];
+            }
+
+            await api.post('/auth/register', data, config);
             // User is not automatically logged in. They will be redirected to Login.
         } catch (error: any) {
             console.error('Registration failed - Full Error Object:');
