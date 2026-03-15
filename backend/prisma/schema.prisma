@@ -56,14 +56,15 @@ enum PaymentMethod {
 
 model User {
   id         Int     @id @default(autoincrement())
-  email      String  @unique
-  password   String
-  name       String
   role       Role    @default(CUSTOMER)
-  phone      String?
+  phone      String? @unique
   gender     Gender?
-  isVerified Boolean @default(false) // For Riders
-  isOnline   Boolean @default(false) // Rider availability status
+  isVerified Boolean @default(false)
+  isOnline   Boolean @default(false)
+
+  @@index([role])
+  @@index([isOnline])
+  @@index([email])
   lastLat    Float? // Real-time latitude
   lastLng    Float? // Real-time longitude
   pushToken  String? // Expo Push Notification Token
@@ -195,6 +196,9 @@ model Delivery {
   dropoffLng     Float?
   status         DeliveryStatus @default(PENDING)
   paymentMethod  PaymentMethod  @default(COD)
+
+  @@index([status])
+  @@index([createdAt])
   price          Decimal?
   distanceKm     Float?
   rating         Int? // 1-5 Star Rating received for this specific trip
