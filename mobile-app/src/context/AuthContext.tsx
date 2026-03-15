@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import api, { setAuthToken } from '../services/api';
+import api, { setAuthToken, BACKEND_URL } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
 export interface User {
@@ -93,14 +94,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const isFormData = data instanceof FormData;
             const headers: any = isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' };
 
-            // ENSURE registration is sent without the global Authorization header if it was previously set
-            // because registration is a public route and can fail with 401 if a stale token is sent.
-            await api.post('/auth/register', data, { 
-                headers: {
-                    ...headers,
-                    Authorization: undefined
-                }
-            });
+            // ENSURE registration is sent without ANY global headers.
+            // Using a fresh axios instance is the most reliable way to avoid 401 from stale common headers.
+            await axios.post(`${BACKEND_URL}/api/auth/register`, data, { headers });
             // User is not automatically logged in. They will be redirected to Login.
         } catch (error) {
             console.error('Registration failed', error);
