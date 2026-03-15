@@ -83,7 +83,7 @@ const upload = multer({ storage });
  *       400:
  *         description: User already exists or validation error
  */
-router.post('/register', authenticate, authorize([Role.ADMIN]), upload.fields([{ name: 'passport', maxCount: 1 }, { name: 'ninSlip', maxCount: 1 }]), register);
+router.post('/register', upload.fields([{ name: 'passport', maxCount: 1 }, { name: 'ninSlip', maxCount: 1 }]), register);
 
 /**
  * @swagger

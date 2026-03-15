@@ -16,6 +16,12 @@ enum Role {
   PARTNER
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum DeliveryStatus {
   PENDING
   ACCEPTED
@@ -55,6 +61,7 @@ model User {
   name       String
   role       Role    @default(CUSTOMER)
   phone      String?
+  gender     Gender?
   isVerified Boolean @default(false) // For Riders
   isOnline   Boolean @default(false) // Rider availability status
   lastLat    Float? // Real-time latitude

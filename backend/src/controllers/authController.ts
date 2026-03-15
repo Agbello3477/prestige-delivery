@@ -18,6 +18,10 @@ const registerSchema = z.object({
     plateNumber: z.string().optional(),
 });
 
+const registerWithGenderSchema = registerSchema.extend({
+    gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+});
+
 const loginSchema = z.object({
     email: z.string().email(),
     password: z.string(),
@@ -41,7 +45,12 @@ const resetPasswordSchema = z.object({
 export const register = async (req: Request, res: Response) => {
     try {
         // Parse body
-        const { email, password, name, role, phone, nin, address, stateOfOrigin, isBikeOwner, plateNumber } = registerSchema.parse(req.body);
+        const { email, password, name, role, phone, nin, address, stateOfOrigin, isBikeOwner, plateNumber, gender } = registerWithGenderSchema.parse(req.body);
+
+        // Security: Prevent public ADMIN registration
+        if (role === Role.ADMIN) {
+            return res.status(403).json({ message: 'Unauthorized role assignment' });
+        }
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
@@ -67,6 +76,7 @@ export const register = async (req: Request, res: Response) => {
                 isBikeOwner: isBikeOwner || false,
                 passportUrl,
                 ninSlipUrl,
+                gender: (gender as any) || null
             },
         });
 
@@ -249,7 +259,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         await prisma.user.update({
             where: { id: user.id },
             data: { 
-                password: hashed,
+                password: hashedPassword,
                 resetToken: null,
                 resetTokenExpiry: null
             }

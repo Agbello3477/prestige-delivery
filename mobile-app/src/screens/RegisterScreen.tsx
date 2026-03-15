@@ -23,6 +23,7 @@ const RegisterScreen = () => {
         plateNumber: '',
         model: '',
         chassisNumber: '',
+        gender: '',
     });
 
     const [passportImage, setPassportImage] = useState<string | null>(null);
@@ -107,6 +108,7 @@ const RegisterScreen = () => {
             data.append('password', formData.password);
             data.append('phone', formData.phone);
             data.append('role', formData.role);
+            if (formData.gender) data.append('gender', formData.gender);
 
             if (formData.role === 'RIDER') {
                 data.append('nin', formData.nin);
@@ -200,6 +202,25 @@ const RegisterScreen = () => {
                         onChangeText={(text) => setFormData({ ...formData, password: text })}
                         secureTextEntry
                     />
+
+                    {formData.role === 'CUSTOMER' && (
+                        <View className="mb-4">
+                            <Text className="text-gray-700 mb-2 ml-1 font-semibold">Gender</Text>
+                            <View className="flex-row space-x-2">
+                                {['MALE', 'FEMALE', 'OTHER'].map((g) => (
+                                    <TouchableOpacity
+                                        key={g}
+                                        onPress={() => setFormData({ ...formData, gender: g })}
+                                        className={`flex-1 p-3 rounded-xl border items-center ${formData.gender === g ? 'bg-brand-600 border-brand-600' : 'bg-gray-50 border-gray-300'}`}
+                                    >
+                                        <Text className={`font-bold ${formData.gender === g ? 'text-white' : 'text-gray-700'}`}>
+                                            {g.charAt(0) + g.slice(1).toLowerCase()}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    )}
 
                     {formData.role === 'RIDER' ? (
                         <View style={{ paddingTop: 16, borderTopWidth: 1, borderColor: '#E5E7EB' }}>
@@ -313,6 +334,10 @@ const RegisterScreen = () => {
                         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                             <Text className="text-brand-600 font-bold">Login</Text>
                         </TouchableOpacity>
+                    </View>
+
+                    <View className="mt-8 items-center">
+                        <Text className="text-gray-400 text-xs text-center">Powered by: MaSha Secure Tech</Text>
                     </View>
 
                     <View className="h-20" />

@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -37,26 +36,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-        [
-          "expo-location",
-          {
-            "locationAlwaysAndWhenInUsePermission": "Allow Prestige Delivery to use your location."
-          }
-        ]
-    ],
-    "updates": {
-      "url": "https://u.expo.dev/50f15469-e247-41f8-8101-9686f5599d3b",
-      "enabled": true,
-      "checkOnLaunch": "ALWAYS",
-      "fallbackToCacheTimeout": 0
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "50f15469-e247-41f8-8101-9686f5599d3b"
-      }
-    }
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Prestige Delivery to use your location."
+        }
+      ]
+    ]
   }
 }
