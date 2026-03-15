@@ -129,7 +129,7 @@ export const deletePartner = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const adminId = (req as any).user.id;
-        const userId = parseInt(id);
+        const userId = parseInt(id as string);
 
         const partner = await prisma.user.findUnique({
             where: { id: userId },
