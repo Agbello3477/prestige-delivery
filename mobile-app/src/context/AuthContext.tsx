@@ -8,11 +8,14 @@ export interface User {
     email: string;
     name: string;
     phone?: string;
-    role: 'ADMIN' | 'RIDER' | 'CUSTOMER';
+    role: 'ADMIN' | 'RIDER' | 'CUSTOMER' | 'PARTNER';
     isOnline?: boolean;
     isVerified?: boolean;
     isRejected?: boolean;
     rejectionReason?: string;
+    isBlocked?: boolean;
+    isSuspended?: boolean;
+    suspensionEndDate?: string;
     nin?: string;
     address?: string;
     stateOfOrigin?: string;

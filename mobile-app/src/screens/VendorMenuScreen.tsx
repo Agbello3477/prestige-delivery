@@ -10,7 +10,6 @@ const VendorMenuScreen = () => {
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState<Record<number, any>>({});
     const [showCart, setShowCart] = useState(false);
-    const [showCart, setShowCart] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deliveryOption, setDeliveryOption] = useState<'PICKUP' | 'DELIVERY'>('PICKUP');
     const [deliveryAddress, setDeliveryAddress] = useState('');
