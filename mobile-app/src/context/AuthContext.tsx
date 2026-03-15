@@ -92,7 +92,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(true);
         try {
             const isFormData = data instanceof FormData;
-            const headers: any = isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' };
+            // IMPORTANT: For FormData, do NOT set Content-Type manually. 
+            // Axios will set it automatically with the correct boundary.
+            const headers: any = isFormData ? {} : { 'Content-Type': 'application/json' };
 
             // ENSURE registration is sent without ANY global headers.
             // Using a fresh axios instance is the most reliable way to avoid 401 from stale common headers.

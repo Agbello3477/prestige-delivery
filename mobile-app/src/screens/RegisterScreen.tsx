@@ -145,7 +145,18 @@ const RegisterScreen = () => {
                 [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
             );
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Registration failed';
+            console.error('Registration error detail:', error.response?.data);
+            const data = error.response?.data;
+            let msg = data?.message || 'Registration failed';
+            
+            // If it's a validation error, show the first few specific issues
+            if (data?.errors && Array.isArray(data.errors)) {
+                const specificErrors = data.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join('\n');
+                msg = `${msg}:\n${specificErrors}`;
+            } else if (data?.error) {
+                msg = `${msg}: ${data.error}`;
+            }
+
             Alert.alert('Error', msg);
         }
     };
