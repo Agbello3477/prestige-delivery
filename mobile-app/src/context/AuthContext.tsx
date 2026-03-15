@@ -96,10 +96,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // ENSURE registration is sent without the global Authorization header if it was previously set
             // because registration is a public route and can fail with 401 if a stale token is sent.
             await api.post('/auth/register', data, { 
-                headers,
-                transformRequest: (data, headers) => {
-                    delete headers.common['Authorization'];
-                    return data;
+                headers: {
+                    ...headers,
+                    Authorization: undefined
                 }
             });
             // User is not automatically logged in. They will be redirected to Login.
