@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, updateStatus, savePushToken } from '../controllers/authController';
+import { register, login, updateStatus, savePushToken, logout, changePassword, forgotPassword, resetPassword } from '../controllers/authController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
 import { Role } from '@prisma/client';
 
@@ -168,5 +168,11 @@ router.patch('/status', authenticate, updateStatus);
  *                 type: string
  */
 router.post('/push-token', authenticate, savePushToken);
+router.post('/logout', authenticate, logout);
+
+// Password Management
+router.patch('/change-password', authenticate, changePassword);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 export default router;

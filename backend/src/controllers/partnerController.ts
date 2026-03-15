@@ -4,6 +4,7 @@ import { Role, DeliveryStatus } from '@prisma/client';
 import { generateToken, hashPassword } from '../utils/auth';
 import { io } from '../socket';
 import { sendPushNotification } from '../services/notificationService';
+import { logActivity } from '../services/auditService';
 import { z } from 'zod';
 
 const registerPartnerSchema = z.object({
@@ -77,9 +78,95 @@ export const getPartners = async (req: Request, res: Response) => {
     }
 };
 
+export const updatePartner = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { name, phone, email, businessName, address, partnerType, agreedPercentage, isActive } = req.body;
+        const adminId = (req as any).user.id;
+
+        const userId = parseInt(id as string);
+
+        const partner = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { partnerProfile: true }
+        });
+
+        if (!partner || partner.role !== Role.PARTNER) {
+            return res.status(404).json({ message: 'Partner not found' });
+        }
+
+        const updatedPartner = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                name,
+                phone,
+                email,
+                partnerProfile: {
+                    update: {
+                        businessName,
+                        address,
+                        partnerType,
+                        agreedPercentage,
+                        isActive
+                    }
+                }
+            },
+            include: { partnerProfile: true }
+        });
+
+        await logActivity(adminId, 'PARTNER_UPDATED', {
+            partnerId: id as string,
+            changes: req.body as any
+        }, req.ip || '');
+
+        res.json({ message: 'Partner updated successfully', partner: updatedPartner });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Failed to update partner', error: error.message });
+    }
+};
+
+export const deletePartner = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const adminId = (req as any).user.id;
+        const userId = parseInt(id);
+
+        const partner = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { partnerProfile: true }
+        });
+
+        if (!partner || partner.role !== Role.PARTNER) {
+            return res.status(404).json({ message: 'Partner not found' });
+        }
+
+        const profileId = partner.partnerProfile?.id;
+
+        // Delete related records to avoid foreign key violations
+        if (profileId) {
+            await prisma.menuItem.deleteMany({ where: { partnerId: profileId } });
+            await prisma.vendorOrder.deleteMany({ where: { partnerId: profileId } });
+            await prisma.vehicle.updateMany({
+                where: { partnerId: profileId },
+                data: { partnerId: null }
+            });
+            await prisma.partnerProfile.delete({ where: { id: profileId } });
+        }
+
+        await prisma.user.delete({ where: { id: userId } });
+
+        await logActivity(adminId, 'PARTNER_DELETED', { partnerId: id, partnerName: partner.name }, req.ip);
+
+        res.json({ message: 'Partner deleted successfully' });
+    } catch (error: any) {
+        console.error('Delete partner error:', error);
+        res.status(500).json({ message: 'Failed to delete partner', error: error.message });
+    }
+};
+
 export const getPublicPartners = async (req: Request, res: Response) => {
     try {
-        const { type } = req.query;
+        const type = req.query.type as string;
         let whereClause: any = {};
 
         if (type) {
@@ -151,7 +238,7 @@ export const addMenuItem = async (req: Request, res: Response) => {
 
 export const getMenuItems = async (req: Request, res: Response) => {
     try {
-        const { partnerId } = req.params;
+        const partnerId = req.params.partnerId;
 
         const menuItems = await prisma.menuItem.findMany({
             where: { partnerId: parseInt(partnerId as string) }

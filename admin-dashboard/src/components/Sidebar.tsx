@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Package, Settings, LogOut, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, Package, Settings, LogOut, MessageSquare, ClipboardList } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
@@ -23,7 +23,7 @@ const Sidebar = () => {
                 </NavLink>
                 <NavLink to="/dashboard/partners" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
                     <Users className="w-5 h-5 mr-3" />
-                    Partners
+                    Partner Management
                 </NavLink>
                 <NavLink to="/register" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
                     <Users className="w-5 h-5 mr-3" />
@@ -44,6 +44,10 @@ const Sidebar = () => {
                 <NavLink to="/dashboard/settings" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
                     <Settings className="w-5 h-5 mr-3" />
                     Settings
+                </NavLink>
+                <NavLink to="/dashboard/audit" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
+                    <ClipboardList className="w-5 h-5 mr-3" />
+                    Activity Logs
                 </NavLink>
             </nav>
             <div className="p-4 border-t border-brand-600 bg-brand-950/30">

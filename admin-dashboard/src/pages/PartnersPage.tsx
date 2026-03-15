@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Plus, Search, Trash2 } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, X, Loader2 } from 'lucide-react';
 
 interface Partner {
     id: number;
@@ -14,6 +14,7 @@ interface Partner {
         businessName: string;
         address: string | null;
         agreedPercentage: number | null;
+        isActive: boolean;
     };
 }
 
@@ -22,10 +23,13 @@ const PartnersPage = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showModal, setShowModal] = useState(false);
-    const [newPartner, setNewPartner] = useState({
+    const [isEdit, setIsEdit] = useState(false);
+    const [editingPartnerId, setEditingPartnerId] = useState<number | null>(null);
+    const [formData, setFormData] = useState({
         name: '', email: '', password: '', phone: '',
         partnerType: 'FOOD' as 'FOOD' | 'ECOMMERCE' | 'PHARMACY' | 'AUTOMOBILE',
-        businessName: '', address: '', agreedPercentage: 0
+        businessName: '', address: '', agreedPercentage: 0,
+        isActive: true
     });
 
     useEffect(() => {
@@ -33,6 +37,7 @@ const PartnersPage = () => {
     }, []);
 
     const fetchPartners = async () => {
+        setLoading(true);
         try {
             const response = await api.get('/partners');
             setPartners(response.data);
@@ -43,228 +48,355 @@ const PartnersPage = () => {
         }
     };
 
-    const handleCreatePartner = async (e: React.FormEvent) => {
+    const handleOpenModal = (partner?: Partner) => {
+        if (partner) {
+            setIsEdit(true);
+            setEditingPartnerId(partner.id);
+            setFormData({
+                name: partner.name,
+                email: partner.email,
+                password: '', // Don't show password
+                phone: partner.phone || '',
+                partnerType: partner.partnerProfile?.partnerType || 'FOOD',
+                businessName: partner.partnerProfile?.businessName || '',
+                address: partner.partnerProfile?.address || '',
+                agreedPercentage: partner.partnerProfile?.agreedPercentage || 0,
+                isActive: partner.partnerProfile?.isActive ?? true
+            });
+        } else {
+            setIsEdit(false);
+            setEditingPartnerId(null);
+            setFormData({
+                name: '', email: '', password: '', phone: '',
+                partnerType: 'FOOD',
+                businessName: '', address: '', agreedPercentage: 0,
+                isActive: true
+            });
+        }
+        setShowModal(true);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const payload = {
-                ...newPartner,
-                agreedPercentage: newPartner.partnerType === 'AUTOMOBILE' ? Number(newPartner.agreedPercentage) : undefined
+                ...formData,
+                agreedPercentage: formData.partnerType === 'AUTOMOBILE' ? Number(formData.agreedPercentage) : 0
             };
-            await api.post('/partners', payload);
+
+            if (isEdit && editingPartnerId) {
+                await api.put(`/partners/${editingPartnerId}`, payload);
+                alert('Partner updated successfully!');
+            } else {
+                await api.post('/partners', payload);
+                alert('Partner created successfully!');
+            }
             setShowModal(false);
-            setNewPartner({ name: '', email: '', password: '', phone: '', partnerType: 'FOOD', businessName: '', address: '', agreedPercentage: 0 });
             fetchPartners();
-            alert('Partner created successfully!');
         } catch (error) {
-            console.error('Error creating partner:', error);
-            alert('Failed to create partner');
+            console.error('Error saving partner:', error);
+            alert('Failed to save partner');
+        }
+    };
+
+    const handleDelete = async (id: number, name: string) => {
+        if (window.confirm(`Are you sure you want to delete partner "${name}"? This action cannot be undone.`)) {
+            try {
+                await api.delete(`/partners/${id}`);
+                setPartners(partners.filter(p => p.id !== id));
+                alert('Partner deleted successfully');
+            } catch (error) {
+                console.error('Error deleting partner:', error);
+                alert('Failed to delete partner');
+            }
         }
     };
 
     const filteredPartners = partners.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.partnerProfile?.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
-        <div className="p-6">
+        <div className="p-6 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Partners</h1>
-                    <p className="text-gray-500">Manage logistics partners</p>
+                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Partner Management</h1>
+                    <p className="text-gray-500 text-sm mt-1">View, track, and manage your delivery partners.</p>
                 </div>
                 <button
-                    onClick={() => setShowModal(true)}
-                    className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors"
+                    onClick={() => handleOpenModal()}
+                    className="flex items-center gap-2 bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700 transition-all font-medium shadow-sm active:scale-95"
                 >
-                    <Plus size={20} />
+                    <Plus size={18} />
                     Add Partner
                 </button>
             </div>
 
             {/* Search Bar */}
-            <div className="relative mb-6">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <div className="relative mb-8">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors" size={18} />
                 <input
                     type="text"
-                    placeholder="Search partners..."
+                    placeholder="Search by business name, owner name, or email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-shadow bg-white shadow-xs"
                 />
             </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-100">
-                        <tr>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Name</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Vendor Info</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Contact</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Joined</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {loading ? (
-                            <tr><td colSpan={5} className="text-center py-8">Loading...</td></tr>
-                        ) : filteredPartners.length === 0 ? (
-                            <tr><td colSpan={5} className="text-center py-8 text-gray-500">No partners found.</td></tr>
-                        ) : (
-                            filteredPartners.map((partner) => (
-                                <tr key={partner.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold">
-                                                {partner.partnerProfile?.businessName?.charAt(0) || partner.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <span className="font-medium text-gray-900 block">{partner.name}</span>
-                                                <span className="text-xs text-gray-500">{partner.partnerProfile?.partnerType || 'General'}</span>
-                                            </div>
+            {/* Table Container */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left whitespace-nowrap">
+                        <thead className="bg-gray-50/50 border-b border-gray-100">
+                            <tr>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Business / Owner</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Contact Details</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-2 text-gray-400">
+                                            <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+                                            <span className="text-sm font-medium">Fetching partners...</span>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-gray-900 font-medium">
-                                            {partner.partnerProfile?.businessName || 'N/A'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm">
-                                            <p className="text-gray-900">{partner.email}</p>
-                                            <p className="text-gray-500">{partner.phone || 'N/A'}</p>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${partner.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                            {partner.isVerified ? 'Verified' : 'Pending'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-500 text-sm">
-                                        {new Date(partner.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <button className="text-red-500 hover:text-red-700 transition-colors">
-                                            <Trash2 size={18} />
-                                        </button>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : filteredPartners.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span className="text-lg font-semibold text-gray-400 italic">No partners found.</span>
+                                            <span className="text-sm">Try adjusting your search filters.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredPartners.map((partner) => (
+                                    <tr key={partner.id} className="hover:bg-gray-50/80 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center text-brand-700 font-bold text-lg shadow-inner">
+                                                    {partner.partnerProfile?.businessName?.charAt(0) || partner.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <span className="font-bold text-gray-900 block leading-tight">
+                                                        {partner.partnerProfile?.businessName || 'Unnamed Business'}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 mt-1 font-medium">{partner.name}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-2.5 py-1 text-[11px] font-bold bg-gray-100 text-gray-600 rounded-md uppercase tracking-wider">
+                                                {partner.partnerProfile?.partnerType || 'General'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-sm">
+                                                <p className="text-gray-900 font-medium">{partner.email}</p>
+                                                <p className="text-gray-500 mt-0.5">{partner.phone || 'No phone'}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`w-2 h-2 rounded-full ${partner.partnerProfile?.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+                                                <span className={`text-xs font-bold uppercase tracking-tight ${partner.partnerProfile?.isActive ? 'text-green-700' : 'text-red-700'}`}>
+                                                    {partner.partnerProfile?.isActive ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                                <button 
+                                                    onClick={() => handleOpenModal(partner)}
+                                                    className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                                                    title="Edit Partner"
+                                                    aria-label={`Edit ${partner.name}`}
+                                                >
+                                                    <Edit2 size={18} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDelete(partner.id, partner.partnerProfile?.businessName || partner.name)}
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Delete Partner"
+                                                    aria-label={`Delete ${partner.name}`}
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            {/* Add Partner Modal */}
+            {/* Unified Modal (Add/Edit) */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-md">
-                        <h2 className="text-xl font-bold mb-4">Add New Partner</h2>
-                        <form onSubmit={handleCreatePartner} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Partner Type</label>
-                                <select
-                                    value={newPartner.partnerType}
-                                    onChange={(e) => setNewPartner({ ...newPartner, partnerType: e.target.value as any })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500"
-                                >
-                                    <option value="FOOD">Food / Snacks</option>
-                                    <option value="PHARMACY">Pharmacy</option>
-                                    <option value="ECOMMERCE">E-Commerce</option>
-                                    <option value="AUTOMOBILE">Automobile (Bike Provider)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newPartner.businessName}
-                                    onChange={(e) => setNewPartner({ ...newPartner, businessName: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500"
-                                    placeholder="e.g. Prestige Burgers"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
-                                <input
-                                    type="text"
-                                    value={newPartner.address}
-                                    onChange={(e) => setNewPartner({ ...newPartner, address: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500"
-                                />
-                            </div>
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <h2 className="text-lg font-bold text-gray-900">
+                                {isEdit ? 'Update Partner Details' : 'Onboard New Partner'}
+                            </h2>
+                            <button 
+                                onClick={() => setShowModal(false)} 
+                                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Close Modal"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[80vh]">
+                            <div className="grid grid-cols-1 gap-5">
+                                <div className="space-y-4">
+                                    <h3 className="text-xs font-bold text-brand-600 uppercase tracking-widest border-b pb-1">Business Identity</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="partnerType" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Business Type</label>
+                                            <select
+                                                id="partnerType"
+                                                title="Business Type"
+                                                value={formData.partnerType}
+                                                onChange={(e) => setFormData({ ...formData, partnerType: e.target.value as typeof formData.partnerType })}
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-sm font-medium"
+                                            >
+                                                <option value="FOOD">Food / Snacks</option>
+                                                <option value="PHARMACY">Pharmacy</option>
+                                                <option value="ECOMMERCE">E-Commerce</option>
+                                                <option value="AUTOMOBILE">Automobile (Bike Provider)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="businessName" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Business Name</label>
+                                            <input
+                                                id="businessName"
+                                                type="text"
+                                                required
+                                                value={formData.businessName}
+                                                onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-sm font-medium"
+                                                placeholder="e.g. Prestige Express"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="address" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Physical Address</label>
+                                        <input
+                                            id="address"
+                                            type="text"
+                                            value={formData.address}
+                                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-sm font-medium"
+                                            placeholder="Street, City, Kano"
+                                        />
+                                    </div>
 
-                            {newPartner.partnerType === 'AUTOMOBILE' && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Agreed Percentage Cut (%)</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        max="100"
-                                        value={newPartner.agreedPercentage}
-                                        onChange={(e) => setNewPartner({ ...newPartner, agreedPercentage: parseFloat(e.target.value) })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">The % cut of each delivery given to this vendor for supplying the bikes.</p>
+                                    {formData.partnerType === 'AUTOMOBILE' && (
+                                        <div className="bg-brand-50 p-3 rounded-xl border border-brand-100">
+                                            <label htmlFor="agreedPercentage" className="block text-xs font-bold text-brand-700 mb-1.5 uppercase">Agreed Commission (%)</label>
+                                            <input
+                                                id="agreedPercentage"
+                                                type="number"
+                                                required
+                                                min="0"
+                                                max="100"
+                                                value={formData.agreedPercentage}
+                                                onChange={(e) => setFormData({ ...formData, agreedPercentage: parseFloat(e.target.value) })}
+                                                className="w-full px-3 py-2.5 border border-brand-200 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm font-bold text-brand-900"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                            )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Owner / Representative Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newPartner.name}
-                                    onChange={(e) => setNewPartner({ ...newPartner, name: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500"
-                                />
+                                <div className="space-y-4 pt-2">
+                                    <h3 className="text-xs font-bold text-brand-600 uppercase tracking-widest border-b pb-1">Owner / Auth Account</h3>
+                                    <div>
+                                        <label htmlFor="name" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Owner Name</label>
+                                        <input
+                                            id="name"
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-sm font-medium"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="email" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Email Address</label>
+                                            <input
+                                                id="email"
+                                                type="email"
+                                                required
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-sm font-medium"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="phone" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Phone Number</label>
+                                            <input
+                                                id="phone"
+                                                type="tel"
+                                                value={formData.phone}
+                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-sm font-medium"
+                                            />
+                                        </div>
+                                    </div>
+                                    {!isEdit && (
+                                        <div>
+                                            <label htmlFor="password" className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Password</label>
+                                            <input
+                                                id="password"
+                                                type="password"
+                                                required={!isEdit}
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-sm font-medium"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {isEdit && (
+                                        <div className="flex items-center gap-3 py-2">
+                                            <input
+                                                type="checkbox"
+                                                id="isActive"
+                                                checked={formData.isActive}
+                                                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                                className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
+                                            />
+                                            <label htmlFor="isActive" className="text-sm font-bold text-gray-700">Account Active</label>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email (Login ID)</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={newPartner.email}
-                                    onChange={(e) => setNewPartner({ ...newPartner, email: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                                <input
-                                    type="tel"
-                                    value={newPartner.phone}
-                                    onChange={(e) => setNewPartner({ ...newPartner, phone: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                <input
-                                    type="password"
-                                    required
-                                    value={newPartner.password}
-                                    onChange={(e) => setNewPartner({ ...newPartner, password: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500"
-                                />
-                            </div>
-                            <div className="flex gap-3 mt-6">
+
+                            <div className="flex gap-4 mt-8">
                                 <button
                                     type="button"
                                     onClick={() => setShowModal(false)}
-                                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                    className="flex-1 px-4 py-3 text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 font-bold transition-colors border border-gray-200"
                                 >
-                                    Cancel
+                                    Discard
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 px-4 py-2 text-white bg-brand-600 rounded-lg hover:bg-brand-700"
+                                    className="flex-1 px-4 py-3 text-white bg-brand-600 rounded-xl hover:bg-brand-700 font-bold transition-all shadow-lg shadow-brand-500/20 active:scale-95"
                                 >
-                                    Create Partner
+                                    {isEdit ? 'Save Changes' : 'Confirm Registration'}
                                 </button>
                             </div>
                         </form>

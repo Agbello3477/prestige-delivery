@@ -116,10 +116,17 @@ const PartnerMenuPage = () => {
                                     </div>
                                 )}
                                 <div className="absolute top-3 right-3 flex gap-2">
-                                    <button className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:text-brand-600">
+                                    <button 
+                                        className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:text-brand-600"
+                                        title="Edit Item"
+                                    >
                                         <Edit2 size={16} />
                                     </button>
-                                    <button onClick={() => handleDeleteItem(item.id)} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:text-red-600">
+                                    <button 
+                                        onClick={() => handleDeleteItem(item.id)} 
+                                        className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:text-red-600"
+                                        title="Delete Item"
+                                    >
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
@@ -151,8 +158,9 @@ const PartnerMenuPage = () => {
                         <h2 className="text-xl font-bold mb-4">Add Menu / Catalog Item</h2>
                         <form onSubmit={handleCreateItem} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                                <label htmlFor="itemName" className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
                                 <input
+                                    id="itemName"
                                     type="text"
                                     required
                                     value={newItem.name}
@@ -162,8 +170,9 @@ const PartnerMenuPage = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                                 <textarea
+                                    id="description"
                                     value={newItem.description}
                                     onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500"

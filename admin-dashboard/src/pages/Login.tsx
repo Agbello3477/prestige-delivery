@@ -55,15 +55,18 @@ const Login = () => {
                                 />
                             </div>
                             <div className="mt-4">
-                                <label className="block" htmlFor="password">Password</label>
-                                <input
-                                    type="password"
-                                    id="password"
-                                    placeholder="Password"
-                                    className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
+                                    <div className="flex justify-between items-center">
+                                        <label className="block" htmlFor="password">Password</label>
+                                        <Link to="/forgot-password" title="Reset Password" aria-label="Forgot Password" className="text-xs text-brand-600 hover:underline">Forgot Password?</Link>
+                                    </div>
+                                    <input
+                                        type="password"
+                                        id="password"
+                                        placeholder="Password"
+                                        className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
                             </div>
                             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
                             <div className="flex items-baseline justify-between">

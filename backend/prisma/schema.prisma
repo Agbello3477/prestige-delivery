@@ -75,6 +75,8 @@ model User {
   suspensionEndDate DateTime?
   rating            Float? // Average Rating (e.g. 4.5)
   ratingCount       Int       @default(0) // Total number of ratings
+  resetToken        String?
+  resetTokenExpiry  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -87,6 +89,7 @@ model User {
   receivedMessages Message[] @relation("ReceivedMessages")
 
   partnerProfile PartnerProfile?
+  auditLogs      AuditLog[]
 }
 
 model PartnerProfile {
@@ -228,4 +231,14 @@ model Message {
 
   sender   User @relation("SentMessages", fields: [senderId], references: [id])
   receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String   // e.g., "LOGIN", "LOGOUT", "PARTNER_CREATED", "PARTNER_UPDATED", "PARTNER_DELETED"
+  details   String?  // JSON string or descriptive text
+  ipAddress String?
+  timestamp DateTime @default(now())
 }

@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { Role } from '@prisma/client';
 import prisma from '../lib/prisma';
-import { generateToken, hashPassword, comparePassword } from '../utils/auth';
+import { comparePassword, generateToken, hashPassword } from '../utils/auth';
+import { logActivity } from '../services/auditService';
 import { z } from 'zod';
 
 const registerSchema = z.object({
@@ -20,6 +21,21 @@ const registerSchema = z.object({
 const loginSchema = z.object({
     email: z.string().email(),
     password: z.string(),
+});
+
+const changePasswordSchema = z.object({
+    oldPassword: z.string(),
+    newPassword: z.string().min(6),
+});
+
+const forgotPasswordSchema = z.object({
+    email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+    email: z.string().email(),
+    token: z.string().length(6),
+    newPassword: z.string().min(6),
 });
 
 export const register = async (req: Request, res: Response) => {
@@ -69,6 +85,9 @@ export const register = async (req: Request, res: Response) => {
 
         const token = generateToken({ id: user.id, email: user.email, role: user.role });
         const { password: _, ...userWithoutPassword } = user;
+
+        await logActivity(user.id, 'USER_REGISTERED', { role: user.role }, req.ip);
+
         res.status(201).json({ token, user: userWithoutPassword });
     } catch (error: any) {
         console.error('Registration error:', error);
@@ -99,6 +118,9 @@ export const login = async (req: Request, res: Response) => {
         const token = generateToken({ id: user.id, email: user.email, role: user.role });
         console.log('Login successful for:', email);
         const { password: _, ...userWithoutPassword } = user;
+
+        await logActivity(user.id, 'LOGIN', { email: user.email }, req.ip);
+
         res.json({ token, user: userWithoutPassword });
     } catch (error: any) {
         console.error('Login error:', error);
@@ -145,5 +167,98 @@ export const savePushToken = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Save Push Token error:', error);
         res.status(500).json({ message: 'Failed to save push token', error: error.message });
+    }
+};
+
+export const logout = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        await logActivity(userId, 'LOGOUT', {}, req.ip);
+        res.json({ message: 'Logged out successfully' });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Logout failed' });
+    }
+};
+
+export const changePassword = async (req: Request, res: Response) => {
+    try {
+        const { oldPassword, newPassword } = changePasswordSchema.parse(req.body);
+        const userId = (req as any).user.id;
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const isMatch = await comparePassword(oldPassword, user.password);
+        if (!isMatch) return res.status(400).json({ message: 'Incorrect current password' });
+
+        const hashed = await hashPassword(newPassword);
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashed }
+        });
+
+        await logActivity(userId, 'PASSWORD_CHANGED', {}, req.ip);
+        res.json({ message: 'Password updated successfully' });
+    } catch (error: any) {
+        if (error instanceof z.ZodError) return res.status(400).json({ message: error.issues[0].message });
+        res.status(500).json({ message: 'Failed to change password', error: error.message });
+    }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+    try {
+        const { email } = forgotPasswordSchema.parse(req.body);
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        if (!user) {
+            // Security: don't reveal if user exists, but for debugging/admin we might.
+            // For now, let's keep it friendly for the user.
+            return res.status(404).json({ message: 'No account found with this email' });
+        }
+
+        // Generate 6-digit PIN
+        const token = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { resetToken: token, resetTokenExpiry: expiry }
+        });
+
+        // In a real app, send email here. For this demo, we log it.
+        console.log(`RESET TOKEN FOR ${email}: ${token}`);
+        await logActivity(user.id, 'PASSWORD_RESET_REQUESTED', { token_sent: 'true' }, req.ip);
+
+        res.json({ message: 'A reset code has been sent to your email (check console logs for now)' });
+    } catch (error: any) {
+        if (error instanceof z.ZodError) return res.status(400).json({ message: error.issues[0].message });
+        res.status(500).json({ message: 'Failed to process request', error: error.message });
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const { email, token, newPassword } = resetPasswordSchema.parse(req.body);
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || user.resetToken !== token || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+            return res.status(400).json({ message: 'Invalid or expired reset code' });
+        }
+
+        const hashed = await hashPassword(newPassword);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { 
+                password: hashed,
+                resetToken: null,
+                resetTokenExpiry: null
+            }
+        });
+
+        await logActivity(user.id, 'PASSWORD_RESET_COMPLETED', {}, req.ip);
+        res.json({ message: 'Password reset successfully. You can now login with your new password.' });
+    } catch (error: any) {
+        if (error instanceof z.ZodError) return res.status(400).json({ message: error.issues[0].message });
+        res.status(500).json({ message: 'Failed to reset password', error: error.message });
     }
 };

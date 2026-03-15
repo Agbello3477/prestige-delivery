@@ -12,11 +12,14 @@ import DeliveriesPage from './pages/DeliveriesPage';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import ReconciliationPage from './pages/ReconciliationPage';
+import ActivityLogPage from './pages/ActivityLogPage';
 import DashboardLayout from './layout/DashboardLayout';
 import PartnerDashboardLayout from './layout/PartnerDashboardLayout';
 import PartnerDashboardOverview from './pages/partner/PartnerDashboardOverview';
 import PartnerMenuPage from './pages/partner/PartnerMenuPage';
 import PartnerOrdersPage from './pages/partner/PartnerOrdersPage';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const ProtectedRoute = ({ children, allowedRoles = ['ADMIN'] }: { children: ReactNode, allowedRoles?: string[] }) => {
   const { user, loading } = useAuth();
@@ -42,6 +45,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/register" element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <Register />
@@ -95,6 +100,13 @@ function App() {
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <DashboardLayout>
                   <SettingsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/audit" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout>
+                  <ActivityLogPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
