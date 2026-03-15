@@ -5,7 +5,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const connectionString = process.env.DATABASE_URL!;
-const isProduction = process.env.NODE_ENV === 'production' || connectionString.includes('render.com') || connectionString.includes('amazonaws.com');
+// Render sets RENDER=true, but we also check for production strings and NODE_ENV
+const isProduction = 
+    process.env.RENDER === 'true' || 
+    process.env.NODE_ENV === 'production' || 
+    connectionString.includes('render.com') || 
+    connectionString.includes('amazonaws.com');
+
+console.log(`[DEBUG] Prisma initializing. Production mode: ${isProduction}`);
 
 const pool = new Pool({ 
     connectionString,
