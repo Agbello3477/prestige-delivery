@@ -145,8 +145,9 @@ const RegisterScreen = () => {
                 [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
             );
         } catch (error: any) {
-            console.error('Registration error detail:', error.response?.data);
+            console.error('Registration full error:', error);
             const data = error.response?.data;
+            console.log('Error data from server:', data);
             let msg = data?.message || 'Registration failed';
             
             // If it's a validation error, show the first few specific issues
