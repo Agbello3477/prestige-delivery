@@ -133,7 +133,11 @@ export const deletePartner = async (req: Request, res: Response) => {
 
         const partner = await prisma.user.findUnique({
             where: { id: userId },
-            include: { partnerProfile: true }
+            include: { 
+                partnerProfile: true,
+                deliveriesAsRider: true,
+                deliveriesAsCustomer: true
+            }
         });
 
         if (!partner || partner.role !== Role.PARTNER) {
@@ -142,7 +146,35 @@ export const deletePartner = async (req: Request, res: Response) => {
 
         const profileId = partner.partnerProfile?.id;
 
-        // Delete related records to avoid foreign key violations
+        // 1. Handle Audit Logs (Unlink but preserve history)
+        await prisma.auditLog.updateMany({
+            where: { userId },
+            data: { userId: null }
+        });
+
+        // 2. Handle Messages (Delete conversations)
+        await prisma.message.deleteMany({
+            where: {
+                OR: [
+                    { senderId: userId },
+                    { receiverId: userId }
+                ]
+            }
+        });
+
+        // 3. Handle Deliveries (Unlink from user records)
+        if (partner.deliveriesAsCustomer.length > 0) {
+            await prisma.delivery.deleteMany({ where: { customerId: userId } });
+        }
+        if (partner.deliveriesAsRider.length > 0) {
+            // Should not happen for partners usually, but safe-guard
+            await prisma.delivery.updateMany({
+                where: { riderId: userId },
+                data: { riderId: null }
+            });
+        }
+
+        // 4. Handle Partner Profile specific records
         if (profileId) {
             await prisma.menuItem.deleteMany({ where: { partnerId: profileId } });
             await prisma.vendorOrder.deleteMany({ where: { partnerId: profileId } });
@@ -153,11 +185,12 @@ export const deletePartner = async (req: Request, res: Response) => {
             await prisma.partnerProfile.delete({ where: { id: profileId } });
         }
 
+        // 5. Finally delete the User
         await prisma.user.delete({ where: { id: userId } });
 
-        await logActivity(adminId, 'PARTNER_DELETED', { partnerId: id, partnerName: partner.name }, req.ip);
+        await logActivity(adminId, 'PARTNER_DELETED', { partnerId: id, partnerName: partner.name }, req.ip || '');
 
-        res.json({ message: 'Partner deleted successfully' });
+        res.json({ message: 'Partner and all associated records deleted successfully' });
     } catch (error: any) {
         console.error('Delete partner error:', error);
         res.status(500).json({ message: 'Failed to delete partner', error: error.message });
