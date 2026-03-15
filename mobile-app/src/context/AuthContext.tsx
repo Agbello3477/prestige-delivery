@@ -100,8 +100,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Using a fresh axios instance is the most reliable way to avoid 401 from stale common headers.
             await axios.post(`${BACKEND_URL}/api/auth/register`, data, { headers });
             // User is not automatically logged in. They will be redirected to Login.
-        } catch (error) {
-            console.error('Registration failed', error);
+        } catch (error: any) {
+            console.error('Registration failed - Full Error Object:');
+            console.dir(error); // Logs the full object in many environments
+            
+            if (error.response) {
+                console.error('Registration error response data:', error.response.data);
+            } else if (error.request) {
+                console.error('Registration error - No response received. Connection issue?');
+            } else {
+                console.error('Registration error - Request setup failed:', error.message);
+            }
             throw error;
         } finally {
             setLoading(false);
