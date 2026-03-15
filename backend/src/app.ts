@@ -57,6 +57,20 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/audit', auditRoutes);
 
+app.get('/api/debug/uploads', (req, res) => {
+    try {
+        const files = fs.readdirSync(uploadsDir);
+        res.json({ 
+            uploadsDir, 
+            cwd: process.cwd(), 
+            files,
+            count: files.length
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Prestige Logistics API is running' });
 });

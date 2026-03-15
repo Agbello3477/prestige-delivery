@@ -336,7 +336,15 @@ const RidersPage = () => {
                                             className="w-full h-48 cursor-pointer relative group rounded-lg overflow-hidden border bg-gray-50"
                                             onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.passportUrl!.replace(/\\/g, '/')}`)}
                                         >
-                                            <img src={`${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}`} alt="Passport" className="w-full h-full object-cover" />
+                                            <img 
+                                                src={`${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}`} 
+                                                alt="Passport" 
+                                                className="w-full h-full object-cover" 
+                                                crossOrigin="anonymous"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=Passport+Not+Found';
+                                                }}
+                                            />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                                                 <Search className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </div>
@@ -352,7 +360,15 @@ const RidersPage = () => {
                                             className="w-full h-48 cursor-pointer relative group rounded-lg overflow-hidden border bg-gray-50"
                                             onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.ninSlipUrl!.replace(/\\/g, '/')}`)}
                                         >
-                                            <img src={`${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}`} alt="NIN Slip" className="w-full h-full object-cover" />
+                                            <img 
+                                                src={`${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}`} 
+                                                alt="NIN Slip" 
+                                                className="w-full h-full object-cover" 
+                                                crossOrigin="anonymous"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=NIN+Slip+Not+Found';
+                                                }}
+                                            />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                                                 <Search className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </div>
