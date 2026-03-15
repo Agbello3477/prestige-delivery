@@ -1,9 +1,19 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL!;
+const isProduction = process.env.RENDER === 'true' || connectionString.includes('render.com');
 
-console.log(`[DEBUG] Prisma initialized using standard client.`);
+const pool = new Pool({ 
+    connectionString,
+    ssl: isProduction ? { rejectUnauthorized: false } : false
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
+console.log(`[DEBUG] Prisma initialized via pg-adapter. SSL: ${isProduction}`);
 
 export default prisma;
