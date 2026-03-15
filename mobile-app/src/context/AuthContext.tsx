@@ -92,38 +92,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(true);
         try {
             const isFormData = data instanceof FormData;
-            // IMPORTANT: For FormData, do NOT set Content-Type manually. 
-            // Axios will set it automatically with the correct boundary.
+            // IMPORTANT: Never set Content-Type manually for FormData in Axios/React-Native. 
+            // It breaks the boundary string.
             const headers: any = isFormData ? {} : { 'Content-Type': 'application/json' };
 
-            // FIXED: Using a request config object to explicitly control headers.
-            const config: any = {
-                headers: { ...headers }
-            };
+            // Backup current token and CLEAR it for this specific public call
+            const originalToken = api.defaults.headers.common['Authorization'];
+            delete api.defaults.headers.common['Authorization'];
 
-            // Ensure Authorization is COMPLETELY removed for this public request
-            if (config.headers.Authorization) delete config.headers.Authorization;
-            if (api.defaults.headers.common['Authorization']) {
-                // For this specific call, we want to ensure common headers don't leak
-                config.transformRequest = [(data: any, requestHeaders: any) => {
-                    delete requestHeaders.common['Authorization'];
-                    delete requestHeaders['Authorization'];
-                    return data;
-                }];
+            try {
+                // Pre-check: Verify we can even reach the server
+                console.log(`[DEBUG] Attempting connection to: ${BACKEND_URL}/api/health`);
+                
+                await api.post('/auth/register', data, { headers });
+                // User is not automatically logged in. They will be redirected to Login.
+            } finally {
+                // RESTORE the token for future calls if it existed
+                if (originalToken) {
+                    api.defaults.headers.common['Authorization'] = originalToken;
+                }
             }
-
-            await api.post('/auth/register', data, config);
-            // User is not automatically logged in. They will be redirected to Login.
         } catch (error: any) {
-            console.error('Registration failed - Full Error Object:');
-            console.dir(error); // Logs the full object in many environments
-            
+            console.error('Registration failed - Final Diagnosis:');
             if (error.response) {
-                console.error('Registration error response data:', error.response.data);
+                console.error('SERVER RESPONDED WITH ERROR:', error.response.status, error.response.data);
             } else if (error.request) {
-                console.error('Registration error - No response received. Connection issue?');
+                console.error('NO RESPONSE FROM SERVER - Possible Network/URL blocker.');
             } else {
-                console.error('Registration error - Request setup failed:', error.message);
+                console.error('REQUEST SETUP FAILED:', error.message);
             }
             throw error;
         } finally {
