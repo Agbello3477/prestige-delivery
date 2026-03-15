@@ -43,6 +43,11 @@ const PartnerSidebar = () => {
                     <LogOut className="w-5 h-5 mr-3 text-red-400" />
                     Logout
                 </button>
+                <div className="mt-4 px-4 pt-4 border-t border-gray-700/50">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold text-center">
+                        © {new Date().getFullYear()} MaSha Secure Tech
+                    </p>
+                </div>
             </div>
         </div>
     );
