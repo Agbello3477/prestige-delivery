@@ -43,11 +43,15 @@ const resetPasswordSchema = z.object({
 });
 
 export const register = async (req: Request, res: Response) => {
-    console.log(`[DEBUG] Register request received: ${req.method} ${req.url}`);
+    console.log(`[DEBUG] Register request: ${req.method} ${req.url}`);
+    console.log('[DEBUG] Content-Type:', req.headers['content-type']);
     console.log('[DEBUG] Body:', JSON.stringify(req.body, null, 2));
+    
     try {
-        // Parse body
-        const { email, password, name, role, phone, nin, address, stateOfOrigin, isBikeOwner, plateNumber, gender } = registerWithGenderSchema.parse(req.body);
+        // Parse body with fallback to empty object to get descriptive Zod errors
+        const body = req.body || {};
+        const parsedData = registerWithGenderSchema.parse(body);
+        const { email, password, name, role, phone, nin, address, stateOfOrigin, isBikeOwner, plateNumber, gender } = parsedData;
 
         // Security: Prevent public ADMIN registration
         if (role === Role.ADMIN) {
