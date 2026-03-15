@@ -259,10 +259,10 @@ export const resetPassword = async (req: Request, res: Response) => {
         await prisma.user.update({
             where: { id: user.id },
             data: { 
-                password: hashedPassword,
+                password: hashed,
                 resetToken: null,
                 resetTokenExpiry: null
-            }
+            } as any
         });
 
         await logActivity(user.id, 'PASSWORD_RESET_COMPLETED', {}, req.ip);
