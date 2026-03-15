@@ -60,7 +60,7 @@ model User {
   password   String
   name       String
   role       Role    @default(CUSTOMER)
-  phone      String? @unique
+  phone      String?
   gender     Gender?
   isVerified Boolean @default(false)
   isOnline   Boolean @default(false)
@@ -68,6 +68,7 @@ model User {
   @@index([role])
   @@index([isOnline])
   @@index([email])
+  @@index([phone])
   lastLat    Float? // Real-time latitude
   lastLng    Float? // Real-time longitude
   pushToken  String? // Expo Push Notification Token
