@@ -96,9 +96,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Axios will set it automatically with the correct boundary.
             const headers: any = isFormData ? {} : { 'Content-Type': 'application/json' };
 
-            // ENSURE registration is sent without ANY global headers.
-            // Using a fresh axios instance is the most reliable way to avoid 401 from stale common headers.
-            await axios.post(`${BACKEND_URL}/api/auth/register`, data, { headers });
+            // FIXED: Using the shared api instance again but explicitly overriding Authorization.
+            // This is safer and avoids the "Network Error" caused by raw axios configuration differences.
+            await api.post('/auth/register', data, { 
+                headers: {
+                    ...headers,
+                    Authorization: undefined
+                }
+            });
             // User is not automatically logged in. They will be redirected to Login.
         } catch (error: any) {
             console.error('Registration failed - Full Error Object:');
