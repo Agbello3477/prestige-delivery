@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
+import fs from 'fs';
 
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger';
@@ -12,10 +14,20 @@ const app = express();
 app.use(cors());
 app.use(helmet({
     crossOriginResourcePolicy: false,
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "img-src": ["'self'", "data:", "*"],
+        },
+    },
 }));
 app.use(morgan('dev'));
-app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+app.use('/uploads', express.static(uploadsDir));
 
 // Debug Middleware
 app.use((req, res, next) => {
