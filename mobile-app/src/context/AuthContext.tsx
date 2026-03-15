@@ -91,9 +91,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(true);
         try {
             const isFormData = data instanceof FormData;
-            const headers = isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined;
+            const headers: any = isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' };
 
-            await api.post('/auth/register', data, { headers });
+            // ENSURE registration is sent without the global Authorization header if it was previously set
+            // because registration is a public route and can fail with 401 if a stale token is sent.
+            await api.post('/auth/register', data, { 
+                headers,
+                transformRequest: (data, headers) => {
+                    delete headers.common['Authorization'];
+                    return data;
+                }
+            });
             // User is not automatically logged in. They will be redirected to Login.
         } catch (error) {
             console.error('Registration failed', error);
