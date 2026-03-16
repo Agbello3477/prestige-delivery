@@ -34,7 +34,6 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'prestige_delivery_riders',
-        allowed_formats: ['jpg', 'png', 'jpeg'],
         public_id: (req: Request, file: Express.Multer.File) => `${Date.now()}-${file.originalname?.split('.')[0] || 'document'}`
     } as any,
 });
@@ -42,6 +41,19 @@ const storage = new CloudinaryStorage({
 const upload = multer({ 
     storage,
     limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+router.get('/debug/cloudinary-test', async (req: Request, res: Response) => {
+    try {
+        console.log('[DEBUG] Testing Cloudinary connection...');
+        const result = await cloudinary.uploader.upload('https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png', {
+            folder: 'prestige_test'
+        });
+        res.json({ success: true, url: result.secure_url, public_id: result.public_id });
+    } catch (error: any) {
+        console.error('[ERROR] Cloudinary Test Fail:', error);
+        res.status(500).json({ success: false, error: error.message || error });
+    }
 });
 
 const registerWithUpload = (req: Request, res: Response, next: any) => {
