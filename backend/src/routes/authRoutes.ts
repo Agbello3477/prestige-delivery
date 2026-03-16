@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -17,7 +17,6 @@ const router = Router();
 
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
-import { Request } from 'express';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
@@ -33,14 +32,35 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-        folder: 'prestige_delivery_riders',
-        allowed_formats: ['jpg', 'png', 'jpeg'],
-        public_id: (req: Request, file: Express.Multer.File) => `${Date.now()}-${file.originalname?.split('.')[0] || 'document'}`
-    } as any,
+    params: async (req: Request, file: Express.Multer.File) => {
+        return {
+            folder: 'prestige_delivery_riders',
+            public_id: `${Date.now()}-${file.originalname?.split('.')[0] || 'document'}`,
+            format: undefined,
+        };
+    },
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+const registerWithUpload = (req: Request, res: Response, next: any) => {
+    console.log('[DEBUG] Starting registerWithUpload middleware');
+    const uploadFields = upload.fields([{ name: 'passport', maxCount: 1 }, { name: 'ninSlip', maxCount: 1 }]);
+    uploadFields(req, res, (err: any) => {
+        if (err) {
+            console.error('[ERROR] Multer/Cloudinary Upload Error:', err);
+            return res.status(500).json({ 
+                message: 'Error uploading images to Cloudinary', 
+                error: err.message || err 
+            });
+        }
+        console.log('[DEBUG] Multer/Cloudinary Upload successful');
+        next();
+    });
+};
 
 /**
  * @swagger
@@ -95,7 +115,7 @@ const upload = multer({ storage });
  *       400:
  *         description: User already exists or validation error
  */
-router.post('/register', upload.fields([{ name: 'passport', maxCount: 1 }, { name: 'ninSlip', maxCount: 1 }]), register);
+router.post('/register', registerWithUpload, register);
 
 /**
  * @swagger
