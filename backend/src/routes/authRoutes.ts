@@ -32,7 +32,7 @@ const storage = new CloudinaryStorage({
     params: {
         folder: 'prestige_delivery_riders',
         allowed_formats: ['jpg', 'png', 'jpeg'],
-        public_id: (req: Request, file: Express.Multer.File) => `${Date.now()}-${file.originalname.split('.')[0]}`
+        public_id: (req: Request, file: Express.Multer.File) => `${Date.now()}-${file.originalname?.split('.')[0] || 'document'}`
     } as any,
 });
 

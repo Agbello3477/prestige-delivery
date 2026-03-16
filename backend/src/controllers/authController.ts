@@ -45,8 +45,15 @@ const resetPasswordSchema = z.object({
 export const register = async (req: Request, res: Response) => {
     console.log(`[DEBUG] Register request: ${req.method} ${req.url}`);
     console.log('[DEBUG] Content-Type:', req.headers['content-type']);
-    console.log('[DEBUG] Body:', JSON.stringify(req.body, null, 2));
+    console.log('[DEBUG] Body Keys:', Object.keys(req.body));
+    console.log('[DEBUG] Files Object:', !!(req as any).files);
+    if ((req as any).files) {
+        console.log('[DEBUG] Files Fields:', Object.keys((req as any).files));
+    }
     
+    // Check Cloudinary Config Status
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    console.log('[DEBUG] Cloudinary Cloud Name set:', !!cloudName);
     try {
         // Parse body with fallback to empty object to get descriptive Zod errors
         const body = req.body || {};
@@ -65,8 +72,13 @@ export const register = async (req: Request, res: Response) => {
 
         // Handle Files
         const files = (req as any).files as { [fieldname: string]: any[] };
+        console.log('[DEBUG] Files received:', JSON.stringify(files, (key, value) => key === 'buffer' ? '[BUFFER]' : value, 2));
+        
         const passportUrl = files?.['passport']?.[0]?.path;
         const ninSlipUrl = files?.['ninSlip']?.[0]?.path;
+        
+        console.log('[DEBUG] Passport Path:', passportUrl);
+        console.log('[DEBUG] NIN Slip Path:', ninSlipUrl);
 
         const hashedPassword = await hashPassword(password);
         const user = await prisma.user.create({

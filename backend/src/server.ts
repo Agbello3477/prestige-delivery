@@ -1,10 +1,10 @@
-import app from './app';
 import dotenv from 'dotenv';
+dotenv.config();
+
+import app from './app';
 import prisma from './lib/prisma';
 import { createServer } from 'http';
 import { initSocket } from './socket';
-
-dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
