@@ -164,77 +164,90 @@ const RidersPage = () => {
         if (!selectedRider) return;
         
         const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
+        if (!printWindow) {
+            alert('Please allow popups to print the verification slip');
+            return;
+        }
 
-        const passportUrl = selectedRider.passportUrl ? `${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}` : '';
-        const ninUrl = selectedRider.ninSlipUrl ? `${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}` : '';
+        // Ensure we have absolute URLs for all assets
+        const origin = window.location.origin;
+        const absoluteLogoUrl = logo.startsWith('http') ? logo : `${origin}${logo.startsWith('/') ? '' : '/'}${logo}`;
+        const passportUrl = selectedRider.passportUrl ? `${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}?t=${Date.now()}` : '';
+        const ninUrl = selectedRider.ninSlipUrl ? `${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}?t=${Date.now()}` : '';
 
         printWindow.document.write(`
             <html>
                 <head>
                     <title>Rider Verification Slip - ${selectedRider.name}</title>
                     <style>
-                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1a1a1a; position: relative; }
-                        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e11d48; padding-bottom: 20px; margin-bottom: 30px; }
-                        .logo { height: 60px; }
-                        .title { font-size: 24px; font-weight: bold; color: #e11d48; margin: 0; }
-                        .content { display: grid; grid-cols: 2; gap: 30px; }
-                        .info-section { margin-bottom: 30px; }
-                        .info-row { display: flex; margin-bottom: 12px; }
-                        .info-label { font-weight: 600; width: 180px; color: #4b5563; }
-                        .info-value { font-weight: 500; color: #111827; }
-                        .image-section { display: flex; gap: 40px; margin-top: 40px; }
-                        .image-container { text-align: center; }
-                        .doc-image { width: 250px; height: 250px; object-fit: cover; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; }
-                        .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); opacity: 0.05; font-size: 100px; font-weight: bold; pointer-events: none; z-index: -1; white-space: nowrap; }
-                        .watermark-img { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; width: 500px; pointer-events: none; z-index: -1; }
-                        .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 14px; }
+                        @page { size: portrait; margin: 0; }
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1a1a1a; position: relative; -webkit-print-color-adjust: exact; }
+                        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #e11d48; padding-bottom: 20px; margin-bottom: 30px; }
+                        .logo { height: 70px; object-fit: contain; }
+                        .title { font-size: 28px; font-weight: 800; color: #e11d48; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+                        .info-section { display: grid; grid-template-columns: 1fr; gap: 15px; background: #fff5f5; padding: 25px; border-radius: 12px; border: 1px solid #fecaca; margin-bottom: 35px; }
+                        .info-row { display: flex; border-bottom: 1px solid #fee2e2; padding-bottom: 8px; }
+                        .info-row:last-child { border-bottom: none; }
+                        .info-label { font-weight: 700; width: 160px; color: #991b1b; font-size: 14px; }
+                        .info-value { font-weight: 500; color: #111827; flex: 1; }
+                        .image-section { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
+                        .image-container { text-align: center; background: #fff; padding: 15px; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+                        .doc-image { width: 100%; height: 280px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; border: 1px solid #f3f4f6; }
+                        .image-label { font-weight: 700; color: #4b5563; font-size: 14px; margin-bottom: 10px; display: block; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; }
+                        .watermark-img { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.04; width: 600px; pointer-events: none; z-index: -10; }
+                        .footer { margin-top: 50px; padding-top: 25px; border-top: 2px solid #f3f4f6; text-align: center; }
+                        .powered-by { color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 10px; }
                         @media print {
                             .no-print { display: none; }
-                            body { -webkit-print-color-adjust: exact; }
+                            body { margin: 0; padding: 40px; }
+                            .image-container { break-inside: avoid; }
                         }
                     </style>
                 </head>
                 <body>
-                    <div class="watermark-img"><img src="${logo}" style="width: 100%;" /></div>
+                    <div class="watermark-img"><img src="${absoluteLogoUrl}" style="width: 100%;" crossorigin="anonymous" /></div>
                     <div class="header">
                         <div>
-                            <h1 class="title">RIDER VERIFICATION SLIP</h1>
-                            <p style="margin: 5px 0 0 0; color: #6b7280;">Prestige Delivery & Logistics Services</p>
+                            <h1 class="title">Rider Identity Card</h1>
+                            <p style="margin: 5px 0 0 0; color: #6b7280; font-weight: 600;">Prestige Delivery & Logistics Services</p>
                         </div>
-                        <img src="${logo}" class="logo" />
+                        <img src="${absoluteLogoUrl}" class="logo" crossorigin="anonymous" />
                     </div>
 
                     <div class="info-section">
-                        <div class="info-row"><span class="info-label">Rider Name:</span> <span class="info-value">${selectedRider.name}</span></div>
-                        <div class="info-row"><span class="info-label">Email:</span> <span class="info-value">${selectedRider.email}</span></div>
-                        <div class="info-row"><span class="info-label">Phone:</span> <span class="info-value">${selectedRider.phone}</span></div>
-                        <div class="info-row"><span class="info-label">NIN:</span> <span class="info-value">${selectedRider.nin || 'N/A'}</span></div>
-                        <div class="info-row"><span class="info-label">Address:</span> <span class="info-value">${selectedRider.address || 'N/A'}</span></div>
-                        <div class="info-row"><span class="info-label">State of Origin:</span> <span class="info-value">${selectedRider.stateOfOrigin || 'N/A'}</span></div>
-                        <div class="info-row"><span class="info-label">Verification Status:</span> <span class="info-value" style="color: ${selectedRider.isVerified ? 'green' : 'orange'};">${selectedRider.isVerified ? 'VERIFIED' : 'PENDING'}</span></div>
+                        <div class="info-row"><span class="info-label">REGISTRATION NAME:</span> <span class="info-value">${selectedRider.name}</span></div>
+                        <div class="info-row"><span class="info-label">E-MAIL ADDRESS:</span> <span class="info-value">${selectedRider.email}</span></div>
+                        <div class="info-row"><span class="info-label">PHONE NUMBER:</span> <span class="info-value">${selectedRider.phone}</span></div>
+                        <div class="info-row"><span class="info-label">NIN NUMBER:</span> <span class="info-value">${selectedRider.nin || 'N/A'}</span></div>
+                        <div class="info-row"><span class="info-label">HOME ADDRESS:</span> <span class="info-value">${selectedRider.address || 'N/A'}</span></div>
+                        <div class="info-row"><span class="info-label">STATE OF ORIGIN:</span> <span class="info-value">${selectedRider.stateOfOrigin || 'N/A'}</span></div>
+                        <div class="info-row"><span class="info-label">VERIFIED STATUS:</span> <span class="info-value" style="color: ${selectedRider.isVerified ? '#059669' : '#d97706'}; font-weight: 800;">${selectedRider.isVerified ? 'APPROVED' : 'PENDING VERIFICATION'}</span></div>
                     </div>
 
                     <div class="image-section">
                         <div class="image-container">
-                            <p style="font-weight: 600; color: #4b5563;">Passport Photograph</p>
-                            ${passportUrl ? `<img src="${passportUrl}" class="doc-image" />` : '<div style="width: 250px; height: 250px; background: #f3f4f6; display: flex; items-center; justify-center; border: 1px solid #e5e7eb; border-radius: 8px;">No Image</div>'}
+                            <span class="image-label">PASSPORT PHOTOGRAPH</span>
+                            ${passportUrl ? `<img src="${passportUrl}" class="doc-image" crossorigin="anonymous" />` : '<div style="height: 280px; background: #f9fafb; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #9ca3af;">NO PHOTO UPLOADED</div>'}
                         </div>
                         <div class="image-container">
-                            <p style="font-weight: 600; color: #4b5563;">NIN Slip</p>
-                            ${ninUrl ? `<img src="${ninUrl}" class="doc-image" />` : '<div style="width: 250px; height: 250px; background: #f3f4f6; display: flex; items-center; justify-center; border: 1px solid #e5e7eb; border-radius: 8px;">No Image</div>'}
+                            <span class="image-label">NIN SLIP / ID CARD</span>
+                            ${ninUrl ? `<img src="${ninUrl}" class="doc-image" crossorigin="anonymous" />` : '<div style="height: 280px; background: #f9fafb; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #9ca3af;">NO DOCUMENT UPLOADED</div>'}
                         </div>
                     </div>
 
                     <div class="footer">
-                        <p>This document verifies the identity and registration of the aforementioned rider with Prestige Delivery & Logistics Services.</p>
-                        <p style="margin-top: 10px; font-weight: 600;">Powered by: MaSha Secure Tech</p>
+                        <p style="font-size: 13px; color: #374151; max-width: 500px; margin: 0 auto; line-height: 1.5;">This document serves as physical proof of the rider's registration and verification status with Prestige Delivery & Logistics Services. For inquiries, contact: support@prestige-delivery.com</p>
+                        <div class="powered-by">Powered by: MaSha Secure Tech</div>
                     </div>
                     
                     <script>
+                        // Wait for images to load before printing
                         window.onload = () => {
-                            window.print();
-                            // window.close();
+                            setTimeout(() => {
+                                window.print();
+                                // Optional: autoclose after printing
+                                // window.close();
+                            }, 500);
                         };
                     </script>
                 </body>
