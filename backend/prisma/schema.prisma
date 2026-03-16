@@ -85,10 +85,21 @@ model User {
   isBlocked         Boolean   @default(false)
   isSuspended       Boolean   @default(false)
   suspensionEndDate DateTime?
-  rating            Float? // Average Rating (e.g. 4.5)
-  ratingCount       Int       @default(0) // Total number of ratings
-  resetToken        String?
-  resetTokenExpiry  DateTime?
+    rating            Float? // Average Rating (e.g. 4.5)
+    ratingCount       Int       @default(0) // Total number of ratings
+    resetToken        String?
+    resetTokenExpiry  DateTime?
+
+    // Admin Approval Tracking
+    approvedById   Int?
+    approvedBy     User?     @relation("AdminApprovals", fields: [approvedById], references: [id])
+    approvedAt     DateTime?
+    declinedById   Int?
+    declinedBy     User?     @relation("AdminDeclines", fields: [declinedById], references: [id])
+    declinedAt     DateTime?
+
+    approvedUsers  User[]    @relation("AdminApprovals")
+    declinedUsers  User[]    @relation("AdminDeclines")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
