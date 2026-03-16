@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
@@ -9,6 +10,11 @@ import api from '../services/api';
 const ProfileScreen = () => {
     const { user, logout } = useAuth();
     const navigation = useNavigation();
+    const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
+
+    const handleImageError = (key: string) => {
+        setImageErrors(prev => ({ ...prev, [key]: true }));
+    };
 
     if (!user) {
         return (
@@ -51,11 +57,12 @@ const ProfileScreen = () => {
                     <View className="w-24 h-24 bg-brand-100 rounded-full items-center justify-center mb-4 overflow-hidden border-2 border-brand-500">
                         {/* We can display passport if available, else initials */}
                         {/* @ts-ignore - passportUrl might be on user object from backend even if not in refined type yet */}
-                        {user.passportUrl ? (
+                        {user.passportUrl && !imageErrors['profile'] ? (
                             <Image
                                 source={{ uri: getImageUrl(user.passportUrl) }}
                                 className="w-full h-full"
                                 resizeMode="cover"
+                                onError={() => handleImageError('profile')}
                             />
                         ) : (
                             <Text className="text-3xl font-bold text-brand-700">
@@ -114,12 +121,17 @@ const ProfileScreen = () => {
                             {/* @ts-ignore */}
                             {user.passportUrl && (
                                 <View className="items-center">
-                                    <View className="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden mb-2">
-                                        <Image
-                                            source={{ uri: getImageUrl(user.passportUrl) }}
-                                            className="w-full h-full"
-                                            resizeMode="cover"
-                                        />
+                                    <View className="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden mb-2 items-center justify-center">
+                                        {!imageErrors['passport'] ? (
+                                            <Image
+                                                source={{ uri: getImageUrl(user.passportUrl) }}
+                                                className="w-full h-full"
+                                                resizeMode="cover"
+                                                onError={() => handleImageError('passport')}
+                                            />
+                                        ) : (
+                                            <Ionicons name="person-outline" size={48} color="#9ca3af" />
+                                        )}
                                     </View>
                                     <Text className="text-sm text-gray-500">Passport</Text>
                                 </View>
@@ -127,12 +139,17 @@ const ProfileScreen = () => {
                             {/* @ts-ignore */}
                             {user.ninSlipUrl && (
                                 <View className="items-center">
-                                    <View className="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden mb-2">
-                                        <Image
-                                            source={{ uri: getImageUrl(user.ninSlipUrl) }}
-                                            className="w-full h-full"
-                                            resizeMode="cover"
-                                        />
+                                    <View className="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden mb-2 items-center justify-center">
+                                        {!imageErrors['nin'] ? (
+                                            <Image
+                                                source={{ uri: getImageUrl(user.ninSlipUrl) }}
+                                                className="w-full h-full"
+                                                resizeMode="cover"
+                                                onError={() => handleImageError('nin')}
+                                            />
+                                        ) : (
+                                            <Ionicons name="document-text-outline" size={48} color="#9ca3af" />
+                                        )}
                                     </View>
                                     <Text className="text-sm text-gray-500">NIN Slip</Text>
                                 </View>

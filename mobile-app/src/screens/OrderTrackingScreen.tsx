@@ -19,6 +19,7 @@ const OrderTrackingScreen = () => {
     const [rating, setRating] = useState(0);
     const [submittingRating, setSubmittingRating] = useState(false);
     const [cancelling, setCancelling] = useState(false);
+    const [riderImageError, setRiderImageError] = useState(false);
 
     const handleCancel = () => {
         Alert.alert(
@@ -180,8 +181,12 @@ const OrderTrackingScreen = () => {
                     <>
                         <View className="bg-brand-50 p-4 rounded-xl mb-4 border border-brand-100 flex-row items-center justify-between">
                             <View className="flex-row items-center flex-1">
-                                {delivery.rider.passportUrl ? (
-                                    <Image source={{ uri: delivery.rider.passportUrl.startsWith('http') ? delivery.rider.passportUrl : `${BACKEND_URL}/${delivery.rider.passportUrl.replace(/\\\\/g, '/')}` }} className="w-16 h-16 rounded-full mr-4 border-2 border-brand-300" />
+                                {delivery.rider.passportUrl && !riderImageError ? (
+                                    <Image 
+                                        source={{ uri: delivery.rider.passportUrl.startsWith('http') ? delivery.rider.passportUrl : `${BACKEND_URL}/${delivery.rider.passportUrl.replace(/\\\\/g, '/')}` }} 
+                                        className="w-16 h-16 rounded-full mr-4 border-2 border-brand-300" 
+                                        onError={() => setRiderImageError(true)}
+                                    />
                                 ) : (
                                     <View className="w-16 h-16 bg-brand-200 rounded-full items-center justify-center mr-4">
                                         <Text className="text-2xl">🚴</Text>

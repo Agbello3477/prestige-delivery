@@ -18,6 +18,7 @@ const CustomerHomeScreen = () => {
     const navigation = useNavigation<any>();
     const [onlineRiders, setOnlineRiders] = useState<any[]>([]);
     const [activeDelivery, setActiveDelivery] = useState<any>(null);
+    const [headerImageError, setHeaderImageError] = useState(false);
 
     useEffect(() => {
         const fetchRiders = async () => {
@@ -107,12 +108,13 @@ const CustomerHomeScreen = () => {
                 <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
                     <View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center overflow-hidden border border-gray-200">
                         {/* @ts-ignore */}
-                        {user?.passportUrl ? (
+                        {user?.passportUrl && !headerImageError ? (
                             <Image
                                 // @ts-ignore
                                 source={{ uri: getImageUrl(user.passportUrl) }}
                                 className="w-full h-full"
                                 resizeMode="cover"
+                                onError={() => setHeaderImageError(true)}
                             />
                         ) : (
                             <Text className="text-xl font-bold text-gray-700">
