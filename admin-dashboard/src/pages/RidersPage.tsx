@@ -254,7 +254,7 @@ const RidersPage = () => {
                                 window.print();
                                 // Optional: autoclose after printing
                                 // window.close();
-                            }, 500);
+                            }, 2000);
                         };
                     </script>
                 </body>

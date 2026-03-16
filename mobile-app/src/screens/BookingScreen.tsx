@@ -245,6 +245,8 @@ const BookingScreen = ({ navigation }: any) => {
                                                 components: 'country:ng',
                                             }}
                                             fetchDetails={true}
+                                            debounce={400}
+                                            minLength={3}
                                             onFail={(error) => console.error('GooglePlacesAutocomplete Error (Pickup):', error)}
                                             styles={{
                                                 container: { flex: 1 },
@@ -301,6 +303,8 @@ const BookingScreen = ({ navigation }: any) => {
                                                 components: 'country:ng',
                                             }}
                                             fetchDetails={true}
+                                            debounce={400}
+                                            minLength={3}
                                             onFail={(error) => console.error('GooglePlacesAutocomplete Error (Dropoff):', error)}
                                             styles={{
                                                 container: { flex: 1 },
