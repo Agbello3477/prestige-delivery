@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { register, login, updateStatus, savePushToken, logout, changePassword, forgotPassword, resetPassword } from '../controllers/authController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
 import { Role } from '@prisma/client';
@@ -18,8 +21,9 @@ import { Request } from 'express';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
-type DestinationCallback = (error: Error | null, destination: string) => void;
-type FileNameCallback = (error: Error | null, filename: string) => void;
+console.log('[DEBUG] Cloudinary Config Initialization...');
+console.log('[DEBUG] Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME);
+console.log('[DEBUG] API Key present:', !!process.env.CLOUDINARY_API_KEY);
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
