@@ -78,6 +78,14 @@ const LoginScreen = () => {
                         )}
                     </TouchableOpacity>
 
+                    <TouchableOpacity
+                        className="w-full bg-white border border-gray-300 p-4 rounded-xl items-center mt-4 flex-row justify-center"
+                        onPress={() => Alert.alert('Information', 'Google Sign-up is being configured on the server. Please use email for now.')}
+                    >
+                        <Text className="text-2xl mr-3 font-bold">G</Text>
+                        <Text className="text-gray-700 font-bold text-lg">Sign up with Google</Text>
+                    </TouchableOpacity>
+
                     <View className="flex-row justify-center mt-4">
                         <Text className="text-gray-500">Don't have an account? </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Register')}>

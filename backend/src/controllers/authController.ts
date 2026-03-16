@@ -84,6 +84,17 @@ export const register = async (req: Request, res: Response) => {
         console.log('[DEBUG] Resolved Passport URL:', passportUrl);
         console.log('[DEBUG] Resolved NIN Slip URL:', ninSlipUrl);
 
+        // FAIL FAST: If Rider, ensure both images are present
+        if (role === Role.RIDER) {
+            if (!passportUrl || !ninSlipUrl) {
+                console.error('[ERROR] Rider registration missing images:', { passport: !!passportUrl, nin: !!ninSlipUrl });
+                return res.status(400).json({ 
+                    message: 'Rider registration requires both Passport and NIN Slip photos.',
+                    details: { passport: !!passportUrl, ninSlip: !!ninSlipUrl }
+                });
+            }
+        }
+
         const hashedPassword = await hashPassword(password);
         const user = await prisma.user.create({
             data: {
@@ -118,7 +129,12 @@ export const register = async (req: Request, res: Response) => {
         const token = generateToken({ id: user.id, email: user.email, role: user.role });
         const { password: _, ...userWithoutPassword } = user;
 
-        await logActivity(user.id, 'USER_REGISTERED', { role: user.role }, req.ip);
+        await logActivity(user.id, 'USER_REGISTERED', { 
+            role: user.role, 
+            name: user.name,
+            email: user.email,
+            details: `New ${user.role.toLowerCase()} registration completed.`
+        }, req.ip);
 
         res.status(201).json({ token, user: userWithoutPassword });
     } catch (error: any) {
@@ -127,6 +143,16 @@ export const register = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Validation failed', errors: error.issues });
         }
         res.status(400).json({ message: 'Registration failed', error: error.message });
+    }
+};
+
+export const googleAuth = async (req: Request, res: Response) => {
+    try {
+        const { googleToken, role } = req.body;
+        console.log('[DEBUG] Google Auth Skeleton Triggered:', { role });
+        res.json({ message: 'Google Authentication logic initialized (Skeleton)', token: 'google_mock_token' });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Google Auth failed', error: error.message });
     }
 };
 

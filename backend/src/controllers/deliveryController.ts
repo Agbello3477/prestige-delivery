@@ -316,7 +316,13 @@ export const rateDelivery = async (req: any, res: Response) => {
 
         res.json({ message: 'Rating submitted successfully' });
     } catch (error: any) {
-        console.error('Error rating delivery:', error);
+        console.error('[ERROR] Failed to submit rating:', {
+            deliveryId: id,
+            rating,
+            customerId,
+            error: error.message,
+            stack: error.stack
+        });
         res.status(500).json({ message: 'Failed to submit rating', error: error.message });
     }
 };

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { register, login, updateStatus, savePushToken, logout, changePassword, forgotPassword, resetPassword } from '../controllers/authController';
+import { register, login, updateStatus, savePushToken, logout, changePassword, forgotPassword, resetPassword, googleAuth } from '../controllers/authController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
 import { Role } from '@prisma/client';
 
@@ -171,6 +171,7 @@ router.post('/register', registerWithUpload, register);
  *         description: Invalid credentials
  */
 router.post('/login', login);
+router.post('/google', googleAuth);
 
 /**
  * @swagger

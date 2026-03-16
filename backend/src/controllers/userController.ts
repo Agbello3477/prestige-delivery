@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { Role } from '@prisma/client';
 import { sendSMS } from '../utils/sms';
+import { logActivity } from '../services/auditService';
 
 export const updateLocation = async (req: Request, res: Response) => {
     try {
@@ -80,10 +81,17 @@ export const approveRider = async (req: Request, res: Response) => {
     try {
         if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
 
+        const adminId = (req as any).user.id;
         const riderId = parseInt(req.params.id as string);
         const updatedUser = await prisma.user.update({
             where: { id: riderId },
-            data: { isVerified: true, isRejected: false, rejectionReason: null } // Clear rejection if approved
+            data: { 
+                isVerified: true, 
+                isRejected: false, 
+                rejectionReason: null,
+                approvedById: adminId,
+                approvedAt: new Date()
+            }
         });
 
         // Notify Rider via Socket
@@ -97,6 +105,13 @@ export const approveRider = async (req: Request, res: Response) => {
         if (updatedUser.phone) {
             await sendSMS(updatedUser.phone, 'PRESTIGE: Your rider account has been approved. You can now go online and accept deliveries.');
         }
+
+        // Descriptive Audit Log
+        await logActivity(adminId, 'RIDER_APPROVED', {
+            riderId: updatedUser.id,
+            riderName: updatedUser.name,
+            details: `Admin approved rider application for ${updatedUser.name}.`
+        }, req.ip);
 
         res.json(updatedUser);
     } catch (error: any) {
@@ -258,6 +273,7 @@ export const declineRider = async (req: Request, res: Response) => {
     try {
         if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
 
+        const adminId = (req as any).user.id;
         const riderId = parseInt(req.params.id as string);
         const { reason } = req.body;
 
@@ -267,7 +283,12 @@ export const declineRider = async (req: Request, res: Response) => {
 
         const updatedUser = await prisma.user.update({
             where: { id: riderId },
-            data: { isRejected: true, rejectionReason: reason }
+            data: { 
+                isRejected: true, 
+                rejectionReason: reason,
+                declinedById: adminId,
+                declinedAt: new Date()
+            }
         });
 
         // Notify Rider via Socket
@@ -281,6 +302,14 @@ export const declineRider = async (req: Request, res: Response) => {
         if (updatedUser.phone) {
             await sendSMS(updatedUser.phone, `PRESTIGE: Your rider account application was declined. Reason: ${reason}`);
         }
+
+        // Descriptive Audit Log
+        await logActivity(adminId, 'RIDER_DECLINED', {
+            riderId: updatedUser.id,
+            riderName: updatedUser.name,
+            reason,
+            details: `Admin declined rider application for ${updatedUser.name}. Reason: ${reason}`
+        }, req.ip);
 
         res.json(updatedUser);
     } catch (error: any) {
