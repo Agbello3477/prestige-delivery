@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import fs from 'fs';
+import prisma from './lib/prisma';
 
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger';
@@ -63,6 +64,27 @@ app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/audit', auditRoutes);
+
+app.get('/api/debug/users', async (req, res) => {
+    try {
+        const users = await prisma.user.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                passportUrl: true,
+                ninSlipUrl: true,
+                createdAt: true
+            }
+        });
+        res.json(users);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 app.get('/api/debug/uploads', (req, res) => {
     try {
