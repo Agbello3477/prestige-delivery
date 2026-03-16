@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getRiders, verifyRider, assignBikeToRider, notifyRiderNoBike, declineRider, getRiderAnalytics, suspendRider, blockRider, liftSuspension } from '../services/rider.service';
 import { BASE_URL } from '../services/api';
 import type { Rider } from '../services/rider.service';
-import { CheckCircle, Search, X, Star, Ban, Clock, Play, Printer } from 'lucide-react';
+import { CheckCircle, Search, X, Star, Ban, Clock, Play, Printer, ExternalLink, Copy } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/Logo prestage.jpeg';
 
@@ -160,6 +160,13 @@ const RidersPage = () => {
         }
     };
 
+    const getImageUrl = (url: string | undefined | null) => {
+        if (!url) return '';
+        if (url.startsWith('http')) return url;
+        // Backward compatibility for local uploads
+        return `${BASE_URL}/${url.replace(/\\/g, '/')}`;
+    };
+
     const handlePrintSlip = () => {
         if (!selectedRider) return;
         
@@ -172,8 +179,8 @@ const RidersPage = () => {
         // Ensure we have absolute URLs for all assets
         const origin = window.location.origin;
         const absoluteLogoUrl = logo.startsWith('http') ? logo : `${origin}${logo.startsWith('/') ? '' : '/'}${logo}`;
-        const passportUrl = selectedRider.passportUrl ? `${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}?t=${Date.now()}` : '';
-        const ninUrl = selectedRider.ninSlipUrl ? `${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}?t=${Date.now()}` : '';
+        const passportUrl = getImageUrl(selectedRider.passportUrl);
+        const ninUrl = getImageUrl(selectedRider.ninSlipUrl);
 
         printWindow.document.write(`
             <html>
@@ -443,7 +450,7 @@ const RidersPage = () => {
                                             onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.passportUrl!.replace(/\\/g, '/')}?t=${Date.now()}`)}
                                         >
                                             <img 
-                                                src={`${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}?t=${Date.now()}`} 
+                                                src={`${getImageUrl(selectedRider.passportUrl)}${selectedRider.passportUrl?.startsWith('http') ? '' : `?t=${Date.now()}`}`} 
                                                 alt="Passport" 
                                                 className="w-full h-full object-cover" 
                                                 crossOrigin="anonymous"
@@ -458,6 +465,28 @@ const RidersPage = () => {
                                     ) : (
                                         <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">No Image</div>
                                     )}
+                                    {selectedRider.passportUrl && (
+                                        <div className="flex mt-2 space-x-2">
+                                            <a 
+                                                href={getImageUrl(selectedRider.passportUrl)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex-1 py-1 px-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs flex items-center justify-center"
+                                            >
+                                                <ExternalLink className="w-3 h-3 mr-1" /> Open
+                                            </a>
+                                            <button 
+                                                onClick={() => {
+                                                    const url = getImageUrl(selectedRider.passportUrl);
+                                                    navigator.clipboard.writeText(url);
+                                                    alert('URL Copied!');
+                                                }}
+                                                className="flex-1 py-1 px-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs flex items-center justify-center"
+                                            >
+                                                <Copy className="w-3 h-3 mr-1" /> Copy URL
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500 mb-2">NIN Slip</p>
@@ -467,7 +496,7 @@ const RidersPage = () => {
                                             onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.ninSlipUrl!.replace(/\\/g, '/')}?t=${Date.now()}`)}
                                         >
                                             <img 
-                                                src={`${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}?t=${Date.now()}`} 
+                                                src={`${getImageUrl(selectedRider.ninSlipUrl)}${selectedRider.ninSlipUrl?.startsWith('http') ? '' : `?t=${Date.now()}`}`} 
                                                 alt="NIN Slip" 
                                                 className="w-full h-full object-cover" 
                                                 crossOrigin="anonymous"
@@ -481,6 +510,28 @@ const RidersPage = () => {
                                         </div>
                                     ) : (
                                         <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">No Document</div>
+                                    )}
+                                    {selectedRider.ninSlipUrl && (
+                                        <div className="flex mt-2 space-x-2">
+                                            <a 
+                                                href={getImageUrl(selectedRider.ninSlipUrl)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex-1 py-1 px-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs flex items-center justify-center"
+                                            >
+                                                <ExternalLink className="w-3 h-3 mr-1" /> Open
+                                            </a>
+                                            <button 
+                                                onClick={() => {
+                                                    const url = getImageUrl(selectedRider.ninSlipUrl);
+                                                    navigator.clipboard.writeText(url);
+                                                    alert('URL Copied!');
+                                                }}
+                                                className="flex-1 py-1 px-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs flex items-center justify-center"
+                                            >
+                                                <Copy className="w-3 h-3 mr-1" /> Copy URL
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>

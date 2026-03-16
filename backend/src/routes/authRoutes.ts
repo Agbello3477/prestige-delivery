@@ -15,17 +15,25 @@ const router = Router();
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import { Request } from 'express';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 type DestinationCallback = (error: Error | null, destination: string) => void;
 type FileNameCallback = (error: Error | null, filename: string) => void;
 
-const storage = multer.diskStorage({
-    destination: (req: Request, file: any, cb: DestinationCallback) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req: Request, file: any, cb: FileNameCallback) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'prestige_delivery_riders',
+        allowed_formats: ['jpg', 'png', 'jpeg'],
+        public_id: (req: Request, file: Express.Multer.File) => `${Date.now()}-${file.originalname.split('.')[0]}`
+    } as any,
 });
 
 const upload = multer({ storage });
