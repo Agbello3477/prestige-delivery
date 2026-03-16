@@ -80,7 +80,15 @@ app.get('/api/debug/users', async (req, res) => {
                 createdAt: true
             }
         });
-        res.json(users);
+        
+        const configStatus = {
+            hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+            hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+            hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
+            nodeEnv: process.env.NODE_ENV
+        };
+
+        res.json({ users, configStatus });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
