@@ -203,11 +203,13 @@ const BookingScreen = ({ navigation }: any) => {
                     </MapView>
                 </View>
 
-                {/* Form Content */}
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
+                <KeyboardAvoidingView 
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+                    className="flex-1"
+                >
                     <View className="flex-1 p-4 bg-white">
                         {step === 1 ? (
-                            <>
+                            <View style={{ flex: 1 }}>
                                 <Text className="text-gray-500 mb-2 font-medium">Select Vehicle</Text>
                                 <View className="flex-row space-x-4 mb-4">
                                     {(['BIKE', 'CAR', 'VAN'] as const).map((type) => (
@@ -222,105 +224,121 @@ const BookingScreen = ({ navigation }: any) => {
                                 </View>
 
                                 {/* Google AutoComplete Inputs */}
-                                <View className="z-[100] mb-4 h-auto min-h-[64px]" style={{ position: 'relative', overflow: 'visible' }}>
+                                <View className="z-[1001] mb-4" style={{ position: 'relative', height: 70 }}>
                                     <Text className="text-gray-500 text-xs mb-1">PICKUP</Text>
-                                    <GooglePlacesAutocomplete
-                                        placeholder="Search Pickup Location"
-                                        onPress={(data, details = null) => {
-                                            if (details) {
-                                                const lat = details.geometry.location.lat;
-                                                const lng = details.geometry.location.lng;
-                                                setPickupLat(lat);
-                                                setPickupLng(lng);
-                                                setPickupAddress(data.description);
-                                            }
-                                        }}
-                                        query={{
-                                            key: GOOGLE_MAPS_API_KEY,
-                                            language: 'en',
-                                            components: 'country:ng',
-                                        }}
-                                        fetchDetails={true}
-                                        styles={{
-                                            container: { flex: 0 },
-                                            textInput: {
-                                                height: 44,
-                                                color: '#111827',
-                                                fontSize: 16,
-                                                borderBottomWidth: 1,
-                                                borderColor: '#e5e7eb',
-                                                backgroundColor: 'white'
-                                            },
-                                            listView: {
-                                                position: 'absolute',
-                                                top: 45, left: 0, right: 0,
-                                                backgroundColor: 'white',
-                                                borderRadius: 8,
-                                                elevation: 10,
-                                                zIndex: 9999,
-                                                borderWidth: 1,
-                                                borderColor: '#f3f4f6'
-                                            },
-                                            description: { color: '#4b5563' }
-                                        }}
-                                        enablePoweredByContainer={false}
-                                        keyboardShouldPersistTaps='always'
-                                        textInputProps={{
-                                            defaultValue: pickupAddress || ''
-                                        }}
-                                    />
+                                    <View style={{ position: 'absolute', top: 20, left: 0, right: 0, zIndex: 1001 }}>
+                                        <GooglePlacesAutocomplete
+                                            placeholder="Search Pickup Location"
+                                            onPress={(data, details = null) => {
+                                                console.log('Pickup Selected:', data.description);
+                                                if (details) {
+                                                    const lat = details.geometry.location.lat;
+                                                    const lng = details.geometry.location.lng;
+                                                    setPickupLat(lat);
+                                                    setPickupLng(lng);
+                                                    setPickupAddress(data.description);
+                                                }
+                                            }}
+                                            query={{
+                                                key: GOOGLE_MAPS_API_KEY,
+                                                language: 'en',
+                                                components: 'country:ng',
+                                            }}
+                                            fetchDetails={true}
+                                            onFail={(error) => console.error('GooglePlacesAutocomplete Error (Pickup):', error)}
+                                            styles={{
+                                                container: { flex: 1 },
+                                                textInput: {
+                                                    height: 44,
+                                                    color: '#111827',
+                                                    fontSize: 16,
+                                                    borderBottomWidth: 1,
+                                                    borderColor: '#e5e7eb',
+                                                    backgroundColor: 'white'
+                                                },
+                                                listView: {
+                                                    backgroundColor: 'white',
+                                                    borderRadius: 8,
+                                                    elevation: 5,
+                                                    zIndex: 9999,
+                                                    borderWidth: 1,
+                                                    borderColor: '#f3f4f6',
+                                                    maxHeight: 300,
+                                                    marginTop: 0,
+                                                },
+                                                description: { color: '#4b5563' },
+                                                row: { backgroundColor: 'white', padding: 13, height: 44, flexDirection: 'row' },
+                                                separator: { height: 0.5, backgroundColor: '#e5e7eb' },
+                                            }}
+                                            enablePoweredByContainer={false}
+                                            keyboardShouldPersistTaps='always'
+                                            textInputProps={{
+                                                defaultValue: pickupAddress || '',
+                                                placeholderTextColor: '#9ca3af',
+                                            }}
+                                        />
+                                    </View>
                                 </View>
 
-                                <View className="z-[90] mb-2 h-auto min-h-[64px]" style={{ position: 'relative', overflow: 'visible' }}>
+                                <View className="z-[1000] mb-2" style={{ position: 'relative', height: 70 }}>
                                     <Text className="text-gray-500 text-xs mb-1">DROPOFF</Text>
-                                    <GooglePlacesAutocomplete
-                                        placeholder="Search Dropoff Location"
-                                        onPress={(data, details = null) => {
-                                            if (details) {
-                                                const lat = details.geometry.location.lat;
-                                                const lng = details.geometry.location.lng;
-                                                setDropoffLat(lat);
-                                                setDropoffLng(lng);
-                                                setDropoffAddress(data.description);
-                                            }
-                                        }}
-                                        query={{
-                                            key: GOOGLE_MAPS_API_KEY,
-                                            language: 'en',
-                                            components: 'country:ng',
-                                        }}
-                                        fetchDetails={true}
-                                        styles={{
-                                            container: { flex: 0 },
-                                            textInput: {
-                                                height: 44,
-                                                color: '#111827',
-                                                fontSize: 16,
-                                                borderBottomWidth: 1,
-                                                borderColor: '#e5e7eb',
-                                                backgroundColor: 'white'
-                                            },
-                                            listView: {
-                                                position: 'absolute',
-                                                top: 45, left: 0, right: 0,
-                                                backgroundColor: 'white',
-                                                borderRadius: 8,
-                                                elevation: 10,
-                                                zIndex: 9999,
-                                                borderWidth: 1,
-                                                borderColor: '#f3f4f6'
-                                            },
-                                            description: { color: '#4b5563' }
-                                        }}
-                                        enablePoweredByContainer={false}
-                                        keyboardShouldPersistTaps='always'
-                                        textInputProps={{
-                                            defaultValue: dropoffAddress || ''
-                                        }}
-                                    />
+                                    <View style={{ position: 'absolute', top: 20, left: 0, right: 0, zIndex: 1000 }}>
+                                        <GooglePlacesAutocomplete
+                                            placeholder="Search Dropoff Location"
+                                            onPress={(data, details = null) => {
+                                                console.log('Dropoff Selected:', data.description);
+                                                if (details) {
+                                                    const lat = details.geometry.location.lat;
+                                                    const lng = details.geometry.location.lng;
+                                                    setDropoffLat(lat);
+                                                    setDropoffLng(lng);
+                                                    setDropoffAddress(data.description);
+                                                }
+                                            }}
+                                            query={{
+                                                key: GOOGLE_MAPS_API_KEY,
+                                                language: 'en',
+                                                components: 'country:ng',
+                                            }}
+                                            fetchDetails={true}
+                                            onFail={(error) => console.error('GooglePlacesAutocomplete Error (Dropoff):', error)}
+                                            styles={{
+                                                container: { flex: 1 },
+                                                textInput: {
+                                                    height: 44,
+                                                    color: '#111827',
+                                                    fontSize: 16,
+                                                    borderBottomWidth: 1,
+                                                    borderColor: '#e5e7eb',
+                                                    backgroundColor: 'white'
+                                                },
+                                                listView: {
+                                                    backgroundColor: 'white',
+                                                    borderRadius: 8,
+                                                    elevation: 5,
+                                                    zIndex: 9999,
+                                                    borderWidth: 1,
+                                                    borderColor: '#f3f4f6',
+                                                    maxHeight: 300,
+                                                    marginTop: 0,
+                                                },
+                                                description: { color: '#4b5563' },
+                                                row: { backgroundColor: 'white', padding: 13, height: 44, flexDirection: 'row' },
+                                                separator: { height: 0.5, backgroundColor: '#e5e7eb' },
+                                            }}
+                                            enablePoweredByContainer={false}
+                                            keyboardShouldPersistTaps='always'
+                                            textInputProps={{
+                                                defaultValue: dropoffAddress || '',
+                                                placeholderTextColor: '#9ca3af',
+                                            }}
+                                        />
+                                    </View>
                                 </View>
 
-                                <View className="mt-auto mb-4">
+                                <View style={{ flex: 1 }} />
+
+                                <View className="mb-4">
                                     <TouchableOpacity
                                         className="w-full bg-brand-600 p-4 rounded-xl items-center"
                                         onPress={handleGetEstimate}
@@ -329,7 +347,7 @@ const BookingScreen = ({ navigation }: any) => {
                                         {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold text-lg">Get Estimate</Text>}
                                     </TouchableOpacity>
                                 </View>
-                            </>
+                            </View>
                         ) : (
                             <ScrollView className="flex-1">
                                 {/* Confirmation View */}
