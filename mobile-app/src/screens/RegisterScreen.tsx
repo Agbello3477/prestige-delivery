@@ -46,7 +46,7 @@ const RegisterScreen = () => {
                         return;
                     }
                     let result = await ImagePicker.launchCameraAsync({
-                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        mediaTypes: 'images',
                         allowsEditing: true,
                         aspect: [4, 3],
                         quality: 0.7,
@@ -61,7 +61,7 @@ const RegisterScreen = () => {
                 text: 'Gallery',
                 onPress: async () => {
                     let result = await ImagePicker.launchImageLibraryAsync({
-                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        mediaTypes: 'images',
                         allowsEditing: true,
                         aspect: [4, 3],
                         quality: 0.7,
@@ -77,8 +77,9 @@ const RegisterScreen = () => {
     };
 
     const handleRegister = async () => {
-        if (!formData.name || !formData.email || !formData.password || !formData.phone) {
-            Alert.alert('Error', 'Please fill in basic fields');
+        const isCustomer = formData.role === 'CUSTOMER';
+        if (!formData.name || !formData.email || !formData.password || (!isCustomer && !formData.phone)) {
+            Alert.alert('Error', isCustomer ? 'Please fill in Name, Email and Password' : 'Please fill in basic fields');
             return;
         }
 
@@ -106,7 +107,7 @@ const RegisterScreen = () => {
             data.append('name', formData.name);
             data.append('email', formData.email);
             data.append('password', formData.password);
-            data.append('phone', formData.phone);
+            if (formData.phone) data.append('phone', formData.phone);
             data.append('role', formData.role);
             if (formData.gender) data.append('gender', formData.gender);
 

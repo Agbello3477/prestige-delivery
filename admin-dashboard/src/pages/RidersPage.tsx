@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { getRiders, verifyRider, assignBikeToRider, notifyRiderNoBike, declineRider, getRiderAnalytics, suspendRider, blockRider, liftSuspension } from '../services/rider.service';
 import { BASE_URL } from '../services/api';
 import type { Rider } from '../services/rider.service';
-import { CheckCircle, Search, X, Star, Ban, Clock, Play } from 'lucide-react';
+import { CheckCircle, Search, X, Star, Ban, Clock, Play, Printer } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import logo from '../assets/Logo prestage.jpeg';
 
 const RidersPage = () => {
     const [riders, setRiders] = useState<Rider[]>([]);
@@ -159,6 +160,89 @@ const RidersPage = () => {
         }
     };
 
+    const handlePrintSlip = () => {
+        if (!selectedRider) return;
+        
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const passportUrl = selectedRider.passportUrl ? `${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}` : '';
+        const ninUrl = selectedRider.ninSlipUrl ? `${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}` : '';
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Rider Verification Slip - ${selectedRider.name}</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1a1a1a; position: relative; }
+                        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e11d48; padding-bottom: 20px; margin-bottom: 30px; }
+                        .logo { height: 60px; }
+                        .title { font-size: 24px; font-weight: bold; color: #e11d48; margin: 0; }
+                        .content { display: grid; grid-cols: 2; gap: 30px; }
+                        .info-section { margin-bottom: 30px; }
+                        .info-row { display: flex; margin-bottom: 12px; }
+                        .info-label { font-weight: 600; width: 180px; color: #4b5563; }
+                        .info-value { font-weight: 500; color: #111827; }
+                        .image-section { display: flex; gap: 40px; margin-top: 40px; }
+                        .image-container { text-align: center; }
+                        .doc-image { width: 250px; height: 250px; object-fit: cover; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; }
+                        .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); opacity: 0.05; font-size: 100px; font-weight: bold; pointer-events: none; z-index: -1; white-space: nowrap; }
+                        .watermark-img { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; width: 500px; pointer-events: none; z-index: -1; }
+                        .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 14px; }
+                        @media print {
+                            .no-print { display: none; }
+                            body { -webkit-print-color-adjust: exact; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="watermark-img"><img src="${logo}" style="width: 100%;" /></div>
+                    <div class="header">
+                        <div>
+                            <h1 class="title">RIDER VERIFICATION SLIP</h1>
+                            <p style="margin: 5px 0 0 0; color: #6b7280;">Prestige Delivery & Logistics Services</p>
+                        </div>
+                        <img src="${logo}" class="logo" />
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-row"><span class="info-label">Rider Name:</span> <span class="info-value">${selectedRider.name}</span></div>
+                        <div class="info-row"><span class="info-label">Email:</span> <span class="info-value">${selectedRider.email}</span></div>
+                        <div class="info-row"><span class="info-label">Phone:</span> <span class="info-value">${selectedRider.phone}</span></div>
+                        <div class="info-row"><span class="info-label">NIN:</span> <span class="info-value">${selectedRider.nin || 'N/A'}</span></div>
+                        <div class="info-row"><span class="info-label">Address:</span> <span class="info-value">${selectedRider.address || 'N/A'}</span></div>
+                        <div class="info-row"><span class="info-label">State of Origin:</span> <span class="info-value">${selectedRider.stateOfOrigin || 'N/A'}</span></div>
+                        <div class="info-row"><span class="info-label">Verification Status:</span> <span class="info-value" style="color: ${selectedRider.isVerified ? 'green' : 'orange'};">${selectedRider.isVerified ? 'VERIFIED' : 'PENDING'}</span></div>
+                    </div>
+
+                    <div class="image-section">
+                        <div class="image-container">
+                            <p style="font-weight: 600; color: #4b5563;">Passport Photograph</p>
+                            ${passportUrl ? `<img src="${passportUrl}" class="doc-image" />` : '<div style="width: 250px; height: 250px; background: #f3f4f6; display: flex; items-center; justify-center; border: 1px solid #e5e7eb; border-radius: 8px;">No Image</div>'}
+                        </div>
+                        <div class="image-container">
+                            <p style="font-weight: 600; color: #4b5563;">NIN Slip</p>
+                            ${ninUrl ? `<img src="${ninUrl}" class="doc-image" />` : '<div style="width: 250px; height: 250px; background: #f3f4f6; display: flex; items-center; justify-center; border: 1px solid #e5e7eb; border-radius: 8px;">No Image</div>'}
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <p>This document verifies the identity and registration of the aforementioned rider with Prestige Delivery & Logistics Services.</p>
+                        <p style="margin-top: 10px; font-weight: 600;">Powered by: MaSha Secure Tech</p>
+                    </div>
+                    
+                    <script>
+                        window.onload = () => {
+                            window.print();
+                            // window.close();
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
     const handleNotifyNoBike = async (id: number) => {
         try {
             await notifyRiderNoBike(id);
@@ -250,8 +334,17 @@ const RidersPage = () => {
             {selectedRider && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-                        <div className="flex items-center justify-between p-4 border-b">
-                            <h3 className="text-xl font-bold text-gray-900">Rider Verification Details</h3>
+                        <div className="flex items-center justify-between p-6 border-b">
+                            <div className="flex items-center space-x-3">
+                                <h3 className="text-xl font-bold text-gray-900">Rider Verification Details</h3>
+                                <button
+                                    onClick={handlePrintSlip}
+                                    className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg transition-colors flex items-center text-sm font-medium"
+                                    title="Print Verification Slip"
+                                >
+                                    <Printer className="w-5 h-5 mr-1" /> Print Slip
+                                </button>
+                            </div>
                             <button onClick={() => setSelectedRider(null)} title="Close Modal" className="p-1 hover:bg-gray-100 rounded-full">
                                 <X className="w-5 h-5 text-gray-500" />
                             </button>
@@ -334,10 +427,10 @@ const RidersPage = () => {
                                     {selectedRider.passportUrl ? (
                                         <div
                                             className="w-full h-48 cursor-pointer relative group rounded-lg overflow-hidden border bg-gray-50"
-                                            onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.passportUrl!.replace(/\\/g, '/')}`)}
+                                            onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.passportUrl!.replace(/\\/g, '/')}?t=${Date.now()}`)}
                                         >
                                             <img 
-                                                src={`${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}`} 
+                                                src={`${BASE_URL}/${selectedRider.passportUrl.replace(/\\/g, '/')}?t=${Date.now()}`} 
                                                 alt="Passport" 
                                                 className="w-full h-full object-cover" 
                                                 crossOrigin="anonymous"
@@ -358,10 +451,10 @@ const RidersPage = () => {
                                     {selectedRider.ninSlipUrl ? (
                                         <div
                                             className="w-full h-48 cursor-pointer relative group rounded-lg overflow-hidden border bg-gray-50"
-                                            onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.ninSlipUrl!.replace(/\\/g, '/')}`)}
+                                            onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.ninSlipUrl!.replace(/\\/g, '/')}?t=${Date.now()}`)}
                                         >
                                             <img 
-                                                src={`${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}`} 
+                                                src={`${BASE_URL}/${selectedRider.ninSlipUrl.replace(/\\/g, '/')}?t=${Date.now()}`} 
                                                 alt="NIN Slip" 
                                                 className="w-full h-full object-cover" 
                                                 crossOrigin="anonymous"
