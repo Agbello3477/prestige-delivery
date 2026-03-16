@@ -83,9 +83,13 @@ app.get('/api/debug/users', async (req, res) => {
         
         const configStatus = {
             hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+            cloudNameValue: process.env.CLOUDINARY_CLOUD_NAME ? `${process.env.CLOUDINARY_CLOUD_NAME.slice(0, 3)}...` : 'MISSING',
             hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+            apiKeyValue: process.env.CLOUDINARY_API_KEY ? `${process.env.CLOUDINARY_API_KEY.slice(0, 4)}...` : 'MISSING',
             hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
-            nodeEnv: process.env.NODE_ENV
+            nodeEnv: process.env.NODE_ENV,
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString()
         };
 
         res.json({ users, configStatus });
