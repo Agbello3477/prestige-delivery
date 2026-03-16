@@ -447,7 +447,7 @@ const RidersPage = () => {
                                     {selectedRider.passportUrl ? (
                                         <div
                                             className="w-full h-48 cursor-pointer relative group rounded-lg overflow-hidden border bg-gray-50"
-                                            onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.passportUrl!.replace(/\\/g, '/')}?t=${Date.now()}`)}
+                                            onClick={() => setEnlargedImage(`${getImageUrl(selectedRider.passportUrl)}${selectedRider.passportUrl?.startsWith('http') ? '' : `?t=${Date.now()}`}`)}
                                         >
                                             <img 
                                                 src={`${getImageUrl(selectedRider.passportUrl)}${selectedRider.passportUrl?.startsWith('http') ? '' : `?t=${Date.now()}`}`} 
@@ -493,7 +493,7 @@ const RidersPage = () => {
                                     {selectedRider.ninSlipUrl ? (
                                         <div
                                             className="w-full h-48 cursor-pointer relative group rounded-lg overflow-hidden border bg-gray-50"
-                                            onClick={() => setEnlargedImage(`${BASE_URL}/${selectedRider.ninSlipUrl!.replace(/\\/g, '/')}?t=${Date.now()}`)}
+                                            onClick={() => setEnlargedImage(`${getImageUrl(selectedRider.ninSlipUrl)}${selectedRider.ninSlipUrl?.startsWith('http') ? '' : `?t=${Date.now()}`}`)}
                                         >
                                             <img 
                                                 src={`${getImageUrl(selectedRider.ninSlipUrl)}${selectedRider.ninSlipUrl?.startsWith('http') ? '' : `?t=${Date.now()}`}`} 

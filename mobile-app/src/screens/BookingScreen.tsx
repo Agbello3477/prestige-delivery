@@ -222,7 +222,7 @@ const BookingScreen = ({ navigation }: any) => {
                                 </View>
 
                                 {/* Google AutoComplete Inputs */}
-                                <View className="z-50 mb-4 h-auto min-h-[64px]">
+                                <View className="z-[100] mb-4 h-auto min-h-[64px]" style={{ position: 'relative', overflow: 'visible' }}>
                                     <Text className="text-gray-500 text-xs mb-1">PICKUP</Text>
                                     <GooglePlacesAutocomplete
                                         placeholder="Search Pickup Location"
@@ -255,10 +255,11 @@ const BookingScreen = ({ navigation }: any) => {
                                                 position: 'absolute',
                                                 top: 45, left: 0, right: 0,
                                                 backgroundColor: 'white',
-                                                borderRadius: 5,
-                                                flex: 1,
-                                                elevation: 5,
-                                                zIndex: 1000,
+                                                borderRadius: 8,
+                                                elevation: 10,
+                                                zIndex: 9999,
+                                                borderWidth: 1,
+                                                borderColor: '#f3f4f6'
                                             },
                                             description: { color: '#4b5563' }
                                         }}
@@ -270,7 +271,7 @@ const BookingScreen = ({ navigation }: any) => {
                                     />
                                 </View>
 
-                                <View className="z-40 mb-2 h-auto min-h-[64px]">
+                                <View className="z-[90] mb-2 h-auto min-h-[64px]" style={{ position: 'relative', overflow: 'visible' }}>
                                     <Text className="text-gray-500 text-xs mb-1">DROPOFF</Text>
                                     <GooglePlacesAutocomplete
                                         placeholder="Search Dropoff Location"
@@ -303,10 +304,11 @@ const BookingScreen = ({ navigation }: any) => {
                                                 position: 'absolute',
                                                 top: 45, left: 0, right: 0,
                                                 backgroundColor: 'white',
-                                                borderRadius: 5,
-                                                flex: 1,
-                                                elevation: 5,
-                                                zIndex: 1000,
+                                                borderRadius: 8,
+                                                elevation: 10,
+                                                zIndex: 9999,
+                                                borderWidth: 1,
+                                                borderColor: '#f3f4f6'
                                             },
                                             description: { color: '#4b5563' }
                                         }}
