@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const apiURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const apiURL = import.meta.env.VITE_API_URL || 'https://prestige-delivery-backend.onrender.com/api';
 export const BASE_URL = apiURL.endsWith('/api') ? apiURL.slice(0, -4) : apiURL;
 
 const api = axios.create({
