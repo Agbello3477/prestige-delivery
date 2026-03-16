@@ -72,13 +72,17 @@ export const register = async (req: Request, res: Response) => {
 
         // Handle Files
         const files = (req as any).files as { [fieldname: string]: any[] };
-        console.log('[DEBUG] Files received:', JSON.stringify(files, (key, value) => key === 'buffer' ? '[BUFFER]' : value, 2));
+        console.log('[DEBUG] Files Object in Controller:', JSON.stringify(files, (key, value) => {
+            if (key === 'buffer') return '[BUFFER]';
+            if (key === 'stream') return '[STREAM]';
+            return value;
+        }, 2));
         
         const passportUrl = files?.['passport']?.[0]?.path;
         const ninSlipUrl = files?.['ninSlip']?.[0]?.path;
         
-        console.log('[DEBUG] Passport Path:', passportUrl);
-        console.log('[DEBUG] NIN Slip Path:', ninSlipUrl);
+        console.log('[DEBUG] Resolved Passport URL:', passportUrl);
+        console.log('[DEBUG] Resolved NIN Slip URL:', ninSlipUrl);
 
         const hashedPassword = await hashPassword(password);
         const user = await prisma.user.create({

@@ -5,10 +5,14 @@ const connectionString = "postgresql://admin:securepassword@localhost:5434/prest
 async function main() {
     const pool = new Pool({ connectionString });
     try {
-        const res = await pool.query('SELECT count(*) FROM "User"');
-        console.log(`--- TOTAL USERS: ${res.rows[0].count} ---`);
-        const users = await pool.query('SELECT name, email, role, "createdAt" FROM "User" ORDER BY "createdAt" DESC');
-        users.rows.forEach(u => console.log(`${u.name} | ${u.email} | ${u.role} | ${u.createdAt}`));
+        const res = await pool.query('SELECT name, email, role, "passportUrl", "ninSlipUrl", "createdAt" FROM "User" ORDER BY "createdAt" DESC LIMIT 10');
+        console.log('--- RECENT USERS IMAGE STATUS ---');
+        res.rows.forEach(u => {
+            console.log(`${u.name} | ${u.email} | ${u.role} | ${u.createdAt}`);
+            console.log(`  Passport: ${u.passportUrl || 'MISSING'}`);
+            console.log(`  NIN Slip: ${u.ninSlipUrl || 'MISSING'}`);
+            console.log('-------------------------');
+        });
         res.rows.forEach(r => {
             console.log(`Action: ${r.action}`);
             console.log(`  Details: ${r.details}`);

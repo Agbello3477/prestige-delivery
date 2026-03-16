@@ -32,13 +32,11 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: async (req: Request, file: Express.Multer.File) => {
-        return {
-            folder: 'prestige_delivery_riders',
-            public_id: `${Date.now()}-${file.originalname?.split('.')[0] || 'document'}`,
-            format: undefined,
-        };
-    },
+    params: {
+        folder: 'prestige_delivery_riders',
+        allowed_formats: ['jpg', 'png', 'jpeg'],
+        public_id: (req: Request, file: Express.Multer.File) => `${Date.now()}-${file.originalname?.split('.')[0] || 'document'}`
+    } as any,
 });
 
 const upload = multer({ 
@@ -47,17 +45,25 @@ const upload = multer({
 });
 
 const registerWithUpload = (req: Request, res: Response, next: any) => {
-    console.log('[DEBUG] Starting registerWithUpload middleware');
+    console.log('[DEBUG] registerWithUpload: Request started');
+    console.log('[DEBUG] Content-Type:', req.headers['content-type']);
+    
     const uploadFields = upload.fields([{ name: 'passport', maxCount: 1 }, { name: 'ninSlip', maxCount: 1 }]);
+    
     uploadFields(req, res, (err: any) => {
         if (err) {
-            console.error('[ERROR] Multer/Cloudinary Upload Error:', err);
+            console.error('[ERROR] Multer/Cloudinary Upload Fail:', err);
             return res.status(500).json({ 
-                message: 'Error uploading images to Cloudinary', 
+                message: 'Internal Server Error during file upload', 
                 error: err.message || err 
             });
         }
-        console.log('[DEBUG] Multer/Cloudinary Upload successful');
+        console.log('[DEBUG] registerWithUpload: Files uploaded successfully');
+        if (req.files) {
+            const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+            console.log('[DEBUG] Passport File:', !!files['passport']);
+            console.log('[DEBUG] NIN Slip File:', !!files['ninSlip']);
+        }
         next();
     });
 };
