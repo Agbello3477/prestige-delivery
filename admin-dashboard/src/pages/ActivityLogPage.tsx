@@ -53,13 +53,57 @@ const ActivityLogPage = () => {
     );
 
     const parseDetails = (details: string | null) => {
-        if (!details) return null;
+        if (!details) return <span className="text-gray-400 italic text-xs">No details</span>;
+        
         try {
-            const obj = JSON.parse(details);
+            const data = JSON.parse(details);
+            
+            if (typeof data !== 'object' || data === null) {
+                return <span className="text-xs text-gray-600">{String(data)}</span>;
+            }
+
+            // Technical keys to skip
+            const skipKeys = ['id', 'password', 'token', '_v', 'createdAt', 'updatedAt'];
+            
+            // Key mapping for common technical terms
+            const keyLabels: { [key: string]: string } = {
+                role: 'Role',
+                email: 'Email',
+                partnerId: 'ID',
+                partnerName: 'Partner',
+                changes: 'Updates',
+                status: 'Status',
+                reason: 'Reason',
+                token_sent: 'Token Sent'
+            };
+
+            const entries = Object.entries(data).filter(([key]) => !skipKeys.includes(key));
+
+            if (entries.length === 0) return <span className="text-gray-400 italic text-xs">No extra info</span>;
+
             return (
-                <pre className="text-[10px] mt-1 bg-gray-50 p-2 rounded border border-gray-100 overflow-x-auto whitespace-pre-wrap max-w-xs">
-                    {JSON.stringify(obj, null, 2)}
-                </pre>
+                <div className="flex flex-wrap gap-1.5 mt-1 max-w-sm">
+                    {entries.map(([key, value]) => {
+                        const label = keyLabels[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                        let formattedValue = '';
+
+                        if (typeof value === 'boolean') {
+                            formattedValue = value ? 'Yes' : 'No';
+                        } else if (typeof value === 'object' && value !== null) {
+                            const objValue = value as { id?: string | number };
+                            formattedValue = typeof objValue.id !== 'undefined' ? `ID: ${objValue.id}` : 'Object Data';
+                        } else {
+                            formattedValue = String(value);
+                        }
+
+                        return (
+                            <div key={key} className="bg-white border border-gray-200 rounded-md px-2 py-1 flex items-center gap-2 shadow-sm">
+                                <span className="text-[9px] font-black text-brand-600 uppercase tracking-tight">{label}</span>
+                                <span className="text-[10px] text-gray-800 font-bold truncate max-w-[120px]">{formattedValue}</span>
+                            </div>
+                        );
+                    })}
+                </div>
             );
         } catch {
             return <span className="text-xs text-gray-500 italic">{details}</span>;
