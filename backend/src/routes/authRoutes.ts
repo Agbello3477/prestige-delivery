@@ -5,6 +5,7 @@ dotenv.config();
 import { register, login, updateStatus, savePushToken, logout, changePassword, forgotPassword, resetPassword, googleAuth } from '../controllers/authController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
 import { Role } from '@prisma/client';
+import prisma from '../lib/prisma';
 
 const router = Router();
 
@@ -41,6 +42,27 @@ const storage = new CloudinaryStorage({
 const upload = multer({ 
     storage,
     limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+router.get('/debug/riders-images', async (req: Request, res: Response) => {
+    try {
+        const riders = await prisma.user.findMany({
+            where: { role: Role.RIDER },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                passportUrl: true,
+                ninSlipUrl: true,
+                createdAt: true
+            }
+        });
+        res.json(riders);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 router.get('/debug/cloudinary-test', async (req: Request, res: Response) => {

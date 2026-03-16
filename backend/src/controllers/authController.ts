@@ -70,13 +70,21 @@ export const register = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Handle Files
         const files = (req as any).files as { [fieldname: string]: any[] };
-        console.log('[DEBUG] Files Object in Controller:', JSON.stringify(files, (key, value) => {
-            if (key === 'buffer') return '[BUFFER]';
-            if (key === 'stream') return '[STREAM]';
-            return value;
-        }, 2));
+        console.log('[DEBUG] Files status:', {
+            hasPassport: !!files?.['passport']?.[0],
+            hasNinSlip: !!files?.['ninSlip']?.[0],
+            passportDetails: files?.['passport']?.[0] ? {
+                path: files['passport'][0].path,
+                size: files['passport'][0].size,
+                mimetype: files['passport'][0].mimetype
+            } : 'Missing',
+            ninDetails: files?.['ninSlip']?.[0] ? {
+                path: files['ninSlip'][0].path,
+                size: files['ninSlip'][0].size,
+                mimetype: files['ninSlip'][0].mimetype
+            } : 'Missing'
+        });
         
         const passportUrl = files?.['passport']?.[0]?.path;
         const ninSlipUrl = files?.['ninSlip']?.[0]?.path;
