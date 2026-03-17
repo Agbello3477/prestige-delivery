@@ -16,6 +16,11 @@ const registerSchema = z.object({
     stateOfOrigin: z.string().optional(),
     isBikeOwner: z.string().transform((val) => val === 'true').optional(), // Multipart sends booleans as strings
     plateNumber: z.string().optional(),
+    guarantorName: z.string().optional(),
+    guarantorPhone: z.string().optional(),
+    guarantorAddress: z.string().optional(),
+    guarantorRelationship: z.string().optional(),
+    guarantorNin: z.string().optional(),
 });
 
 const registerWithGenderSchema = registerSchema.extend({
@@ -58,7 +63,11 @@ export const register = async (req: Request, res: Response) => {
         // Parse body with fallback to empty object to get descriptive Zod errors
         const body = req.body || {};
         const parsedData = registerWithGenderSchema.parse(body);
-        const { email, password, name, role, phone, nin, address, stateOfOrigin, isBikeOwner, plateNumber, gender } = parsedData;
+        const { 
+            email, password, name, role, phone, nin, address, stateOfOrigin, 
+            isBikeOwner, plateNumber, gender,
+            guarantorName, guarantorPhone, guarantorAddress, guarantorRelationship, guarantorNin
+        } = (parsedData as any);
 
         // Security: Prevent public ADMIN registration
         if (role === Role.ADMIN) {
@@ -117,7 +126,16 @@ export const register = async (req: Request, res: Response) => {
                 isBikeOwner: isBikeOwner || false,
                 passportUrl,
                 ninSlipUrl,
-                gender: (gender as any) || null
+                gender: (gender as any) || null,
+                guarantor: (role === Role.RIDER && guarantorName) ? {
+                    create: {
+                        name: guarantorName,
+                        phone: guarantorPhone,
+                        address: guarantorAddress,
+                        relationship: guarantorRelationship,
+                        nin: guarantorNin
+                    }
+                } : undefined
             },
         });
 

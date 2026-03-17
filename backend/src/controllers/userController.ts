@@ -67,7 +67,16 @@ export const getAllRiders = async (req: Request, res: Response) => {
         const riders = await prisma.user.findMany({
             where: { role: Role.RIDER },
             orderBy: { id: 'desc' },
-            include: { vehicles: true }
+            include: { 
+                vehicles: true,
+                approvedBy: {
+                    select: { name: true }
+                },
+                declinedBy: {
+                    select: { name: true }
+                },
+                guarantor: true
+            }
         });
 
         res.json(riders);
@@ -127,7 +136,7 @@ export const assignBike = async (req: Request, res: Response) => {
         if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
 
         const riderId = parseInt(req.params.id as string);
-        const { plateNumber, model } = req.body;
+        const { plateNumber, model, chassisNumber } = req.body;
 
         if (!plateNumber || !model) {
             return res.status(400).json({ message: 'Plate Number and Model are required' });
@@ -138,6 +147,7 @@ export const assignBike = async (req: Request, res: Response) => {
                 type: 'BIKE',
                 plateNumber,
                 model,
+                chassisNumber,
                 riderId
             }
         });

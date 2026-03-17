@@ -15,6 +15,7 @@ const RidersPage = () => {
     // Bike assignment state
     const [plateNumber, setPlateNumber] = useState('');
     const [model, setModel] = useState('');
+    const [chassisNumber, setChassisNumber] = useState('');
     const [assigningBike, setAssigningBike] = useState(false);
 
     // Decline state
@@ -147,7 +148,7 @@ const RidersPage = () => {
         }
         setAssigningBike(true);
         try {
-            await assignBikeToRider(id, plateNumber, model);
+            await assignBikeToRider(id, plateNumber, model, chassisNumber);
             alert("Bike assigned successfully and rider notified!");
             setSelectedRider(null);
             loadRiders(); // Reload to get updated vehicle info
@@ -157,6 +158,7 @@ const RidersPage = () => {
             setAssigningBike(false);
             setPlateNumber('');
             setModel('');
+            setChassisNumber('');
         }
     };
 
@@ -228,7 +230,23 @@ const RidersPage = () => {
                         <div class="info-row"><span class="info-label">NIN NUMBER:</span> <span class="info-value">${selectedRider.nin || 'N/A'}</span></div>
                         <div class="info-row"><span class="info-label">HOME ADDRESS:</span> <span class="info-value">${selectedRider.address || 'N/A'}</span></div>
                         <div class="info-row"><span class="info-label">STATE OF ORIGIN:</span> <span class="info-value">${selectedRider.stateOfOrigin || 'N/A'}</span></div>
-                        <div class="info-row"><span class="info-label">VERIFIED STATUS:</span> <span class="info-value" style="color: ${selectedRider.isVerified ? '#059669' : '#d97706'}; font-weight: 800;">${selectedRider.isVerified ? 'APPROVED' : 'PENDING VERIFICATION'}</span></div>
+                        <div class="info-row"><span class="info-label">VERIFIED STATUS:</span> <span class="info-value" style="color: ${selectedRider.isVerified ? '#059669' : '#d97706'}; font-weight: 800;">${selectedRider.isVerified ? 'APPROVED' : 'PENDING'}</span></div>
+                        ${selectedRider.isVerified && selectedRider.approvedBy ? `
+                            <div class="info-row"><span class="info-label">VERIFIED BY:</span> <span class="info-value">${selectedRider.approvedBy.name}</span></div>
+                            <div class="info-row"><span class="info-label">VERIFIED AT:</span> <span class="info-value">${new Date(selectedRider.approvedAt!).toLocaleString()}</span></div>
+                        ` : ''}
+                        ${selectedRider.isRejected && selectedRider.declinedBy ? `
+                            <div class="info-row"><span class="info-label">DECLINED BY:</span> <span class="info-value">${selectedRider.declinedBy.name}</span></div>
+                            <div class="info-row"><span class="info-label">DECLINED AT:</span> <span class="info-value">${new Date(selectedRider.declinedAt!).toLocaleString()}</span></div>
+                        ` : ''}
+                        ${selectedRider.guarantor ? `
+                            <div style="margin-top: 15px; border-top: 1px dashed #fecaca; padding-top: 15px;">
+                                <div class="info-row"><span class="info-label">GUARANTOR NAME:</span> <span class="info-value">${selectedRider.guarantor.name}</span></div>
+                                <div class="info-row"><span class="info-label">GUARANTOR PHONE:</span> <span class="info-value">${selectedRider.guarantor.phone}</span></div>
+                                <div class="info-row"><span class="info-label">GUARANTOR NIN:</span> <span class="info-value">${selectedRider.guarantor.nin || 'N/A'}</span></div>
+                                <div class="info-row"><span class="info-label">GUARANTOR RELATIONSHIP:</span> <span class="info-value">${selectedRider.guarantor.relationship}</span></div>
+                            </div>
+                        ` : ''}
                     </div>
 
                     <div class="image-section">
@@ -295,7 +313,7 @@ const RidersPage = () => {
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle / Chassis</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -310,8 +328,18 @@ const RidersPage = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {rider.phone}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {rider.vehicles && rider.vehicles.length > 0 ? `${rider.vehicles[0].type} - ${rider.vehicles[0].plateNumber}` : 'N/A'}
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {rider.vehicles && rider.vehicles.length > 0 ? (
+                                        <div className="text-sm">
+                                            <div className="font-medium text-gray-900">{rider.vehicles[0].model}</div>
+                                            <div className="text-gray-500">{rider.vehicles[0].plateNumber}</div>
+                                            {rider.vehicles[0].chassisNumber && (
+                                                <div className="text-xs text-brand-600 font-mono">CH: {rider.vehicles[0].chassisNumber}</div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <span className="text-sm text-gray-400">No Vehicle</span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     {rider.isBlocked ? (
@@ -393,6 +421,38 @@ const RidersPage = () => {
                                     <p className="text-sm text-gray-500">Residential Address</p>
                                     <p className="font-semibold text-gray-900">{selectedRider.address || 'Not provided'}</p>
                                 </div>
+
+                                {/* Guarantor Details */}
+                                {selectedRider.guarantor && (
+                                    <div className="col-span-2 mt-4 pt-4 border-t border-brand-100 bg-brand-50/30 p-4 rounded-lg">
+                                        <h4 className="font-bold text-brand-900 mb-3 flex items-center">
+                                            <span className="w-1.5 h-1.5 bg-brand-600 rounded-full mr-2"></span>
+                                            Guarantor Information
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-xs text-brand-600 font-semibold uppercase tracking-wider">Full Name</p>
+                                                <p className="font-bold text-gray-900">{selectedRider.guarantor.name}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <p className="text-xs text-brand-600 font-semibold uppercase tracking-wider">Contact Phone</p>
+                                                <p className="font-bold text-gray-900">{selectedRider.guarantor.phone}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-brand-600 font-semibold uppercase tracking-wider">NIN Number</p>
+                                                <p className="font-bold text-gray-900">{selectedRider.guarantor.nin || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-brand-600 font-semibold uppercase tracking-wider">Relationship</p>
+                                                <p className="font-bold text-gray-900">{selectedRider.guarantor.relationship}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <p className="text-xs text-brand-600 font-semibold uppercase tracking-wider">Address</p>
+                                                <p className="font-bold text-gray-900 text-sm">{selectedRider.guarantor.address}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Performance & Analytics */}
@@ -682,6 +742,13 @@ const RidersPage = () => {
                                                 placeholder="Plate Number"
                                                 value={plateNumber}
                                                 onChange={(e) => setPlateNumber(e.target.value)}
+                                                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Chassis Number (Optional)"
+                                                value={chassisNumber}
+                                                onChange={(e) => setChassisNumber(e.target.value)}
                                                 className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                                             />
                                         </div>

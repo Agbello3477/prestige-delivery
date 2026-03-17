@@ -19,9 +19,22 @@ export interface Rider {
     isBlocked?: boolean;
     isSuspended?: boolean;
     suspensionEndDate?: string;
+    approvedBy?: { name: string };
+    approvedAt?: string;
+    declinedBy?: { name: string };
+    declinedAt?: string;
+    guarantor?: {
+        name: string;
+        phone: string;
+        address: string;
+        relationship: string;
+        nin: string;
+    };
     vehicles?: {
         type: string;
         plateNumber: string;
+        model: string;
+        chassisNumber?: string;
     }[];
 }
 
@@ -64,10 +77,10 @@ export const declineRider = async (riderId: number, reason: string) => {
     }
 };
 
-export const assignBikeToRider = async (riderId: number, plateNumber: string, model: string) => {
+export const assignBikeToRider = async (riderId: number, plateNumber: string, model: string, chassisNumber?: string) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.post(`${API_URL}/${riderId}/assign-bike`, { plateNumber, model }, {
+        const response = await axios.post(`${API_URL}/${riderId}/assign-bike`, { plateNumber, model, chassisNumber }, {
             headers: { Authorization: `Bearer ${token}` }
         });
         return response.data;

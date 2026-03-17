@@ -24,6 +24,11 @@ const RegisterScreen = () => {
         model: '',
         chassisNumber: '',
         gender: '',
+        guarantorName: '',
+        guarantorPhone: '',
+        guarantorAddress: '',
+        guarantorRelationship: '',
+        guarantorNin: '',
     });
 
     const [passportImage, setPassportImage] = useState<string | null>(null);
@@ -100,6 +105,10 @@ const RegisterScreen = () => {
                 Alert.alert('Error', 'Please provide Bike Details');
                 return;
             }
+            if (!formData.guarantorName || !formData.guarantorPhone || !formData.guarantorAddress || !formData.guarantorRelationship || !formData.guarantorNin) {
+                Alert.alert('Error', 'Please fill in all Guarantor details');
+                return;
+            }
         }
 
         try {
@@ -119,8 +128,16 @@ const RegisterScreen = () => {
 
                 if (formData.isBikeOwner) {
                     data.append('plateNumber', formData.plateNumber);
-                    // Note: We might need to add model/chassis to backend if schema supports or put in metadata
+                    if (formData.model) data.append('model', formData.model);
+                    if (formData.chassisNumber) data.append('chassisNumber', formData.chassisNumber);
                 }
+
+                // Add Guarantor Details
+                data.append('guarantorName', formData.guarantorName);
+                data.append('guarantorPhone', formData.guarantorPhone);
+                data.append('guarantorAddress', formData.guarantorAddress);
+                data.append('guarantorRelationship', formData.guarantorRelationship);
+                data.append('guarantorNin', formData.guarantorNin);
 
                 if (passportImage) {
                     const filename = passportImage.split('/').pop();
@@ -327,6 +344,44 @@ const RegisterScreen = () => {
                                     />
                                 </View>
                             ) : null}
+
+                            <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderColor: '#E5E7EB' }}>
+                                <Text style={{ fontWeight: 'bold', color: '#111827', marginBottom: 16 }}>Guarantor Information</Text>
+                                
+                                <TextInput
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    placeholder="Guarantor Full Name"
+                                    value={formData.guarantorName}
+                                    onChangeText={(text) => setFormData({ ...formData, guarantorName: text })}
+                                />
+                                <TextInput
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    placeholder="Guarantor Phone Number"
+                                    value={formData.guarantorPhone}
+                                    onChangeText={(text) => setFormData({ ...formData, guarantorPhone: text })}
+                                    keyboardType="phone-pad"
+                                />
+                                <TextInput
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    placeholder="Guarantor NIN"
+                                    value={formData.guarantorNin}
+                                    onChangeText={(text) => setFormData({ ...formData, guarantorNin: text })}
+                                    keyboardType="numeric"
+                                />
+                                <TextInput
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    placeholder="Guarantor Relationship (e.g. Father, Uncle)"
+                                    value={formData.guarantorRelationship}
+                                    onChangeText={(text) => setFormData({ ...formData, guarantorRelationship: text })}
+                                />
+                                <TextInput
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    placeholder="Guarantor Address"
+                                    value={formData.guarantorAddress}
+                                    onChangeText={(text) => setFormData({ ...formData, guarantorAddress: text })}
+                                    multiline
+                                />
+                            </View>
                         </View>
                     ) : null}
 
