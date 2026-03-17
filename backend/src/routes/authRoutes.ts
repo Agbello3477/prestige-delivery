@@ -46,19 +46,6 @@ const upload = multer({
 
 // Debug routes removed from here and moved to app.ts for higher visibility
 
-router.get('/debug/cloudinary-test', async (req: Request, res: Response) => {
-    try {
-        console.log('[DEBUG] Testing Cloudinary connection...');
-        const result = await cloudinary.uploader.upload('https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png', {
-            folder: 'prestige_test'
-        });
-        res.json({ success: true, url: result.secure_url, public_id: result.public_id });
-    } catch (error: any) {
-        console.error('[ERROR] Cloudinary Test Fail:', error);
-        res.status(500).json({ success: false, error: error.message || error });
-    }
-});
-
 const registerWithUpload = (req: Request, res: Response, next: any) => {
     console.log('[DEBUG] registerWithUpload: Request started');
     console.log('[DEBUG] Content-Type:', req.headers['content-type']);

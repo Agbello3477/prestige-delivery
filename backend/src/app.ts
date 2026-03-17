@@ -65,76 +65,9 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/audit', auditRoutes);
 
-app.get('/api/debug/users', async (req, res) => {
-    try {
-        const users = await prisma.user.findMany({
-            orderBy: { createdAt: 'desc' },
-            take: 10,
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                passportUrl: true,
-                ninSlipUrl: true,
-                createdAt: true
-            }
-        });
-        
-        const configStatus = {
-            hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
-            cloudNameValue: process.env.CLOUDINARY_CLOUD_NAME ? `${process.env.CLOUDINARY_CLOUD_NAME.slice(0, 3)}...` : 'MISSING',
-            hasApiKey: !!process.env.CLOUDINARY_API_KEY,
-            apiKeyValue: process.env.CLOUDINARY_API_KEY ? `${process.env.CLOUDINARY_API_KEY.slice(0, 4)}...` : 'MISSING',
-            hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
-            nodeEnv: process.env.NODE_ENV,
-            uptime: process.uptime(),
-            timestamp: new Date().toISOString()
-        };
-
-        res.json({ users, configStatus });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.get('/api/debug/riders-images', async (req, res) => {
-    try {
-        const riders = await prisma.user.findMany({
-            where: { role: 'RIDER' },
-            orderBy: { createdAt: 'desc' },
-            take: 20,
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                passportUrl: true,
-                ninSlipUrl: true,
-                createdAt: true,
-                phone: true
-            }
-        });
-        res.json({ count: riders.length, riders });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.get('/api/debug/uploads', (req, res) => {
-    try {
-        const files = fs.readdirSync(uploadsDir);
-        res.json({ 
-            uploadsDir, 
-            cwd: process.cwd(), 
-            files,
-            count: files.length
-        });
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Prestige Logistics API is running' });
+});
     res.json({ status: 'ok', message: 'Prestige Logistics API is running' });
 });
 
