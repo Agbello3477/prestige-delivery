@@ -98,6 +98,28 @@ app.get('/api/debug/users', async (req, res) => {
     }
 });
 
+app.get('/api/debug/riders-images', async (req, res) => {
+    try {
+        const riders = await prisma.user.findMany({
+            where: { role: 'RIDER' },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                passportUrl: true,
+                ninSlipUrl: true,
+                createdAt: true,
+                phone: true
+            }
+        });
+        res.json({ count: riders.length, riders });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/api/debug/uploads', (req, res) => {
     try {
         const files = fs.readdirSync(uploadsDir);
