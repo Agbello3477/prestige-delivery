@@ -68,8 +68,6 @@ app.use('/api/audit', auditRoutes);
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Prestige Logistics API is running' });
 });
-    res.json({ status: 'ok', message: 'Prestige Logistics API is running' });
-});
 
 app.get('/', (req, res) => {
     res.json({ message: 'Prestige Logistics API is running' });
