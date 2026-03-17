@@ -62,6 +62,7 @@ router.get('/debug/cloudinary-test', async (req: Request, res: Response) => {
 const registerWithUpload = (req: Request, res: Response, next: any) => {
     console.log('[DEBUG] registerWithUpload: Request started');
     console.log('[DEBUG] Content-Type:', req.headers['content-type']);
+    console.log('[DEBUG] Content-Length:', req.headers['content-length']);
     
     const uploadFields = upload.fields([{ name: 'passport', maxCount: 1 }, { name: 'ninSlip', maxCount: 1 }]);
     
@@ -73,11 +74,13 @@ const registerWithUpload = (req: Request, res: Response, next: any) => {
                 error: err.message || err 
             });
         }
-        console.log('[DEBUG] registerWithUpload: Files uploaded successfully');
+        console.log('[DEBUG] Multer processed. Body fields:', Object.keys(req.body));
+        console.log('[DEBUG] Received files fields:', req.files ? Object.keys(req.files) : 'NONE');
+        
         if (req.files) {
             const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-            console.log('[DEBUG] Passport File:', !!files['passport']);
-            console.log('[DEBUG] NIN Slip File:', !!files['ninSlip']);
+            if (files['passport']) console.log('[DEBUG] Passport File detected:', files['passport'][0].originalname, 'size:', files['passport'][0].size);
+            if (files['ninSlip']) console.log('[DEBUG] NIN Slip File detected:', files['ninSlip'][0].originalname, 'size:', files['ninSlip'][0].size);
         }
         next();
     });
