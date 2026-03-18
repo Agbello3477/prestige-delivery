@@ -117,9 +117,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (error.response) {
                 console.error('SERVER RESPONDED WITH ERROR:', error.response.status, error.response.data);
             } else if (error.request) {
-                console.error('NO RESPONSE FROM SERVER - Possible Network/URL blocker.');
+                console.error(`NO RESPONSE FROM SERVER at ${BACKEND_URL} - Possible Network/URL blocker.`);
             } else {
-                console.error('REQUEST SETUP FAILED:', error.message);
+                console.error(`REQUEST SETUP FAILED for ${BACKEND_URL}:`, error.message);
             }
             throw error;
         } finally {

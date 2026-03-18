@@ -317,9 +317,9 @@ export const rateDelivery = async (req: any, res: Response) => {
         res.json({ message: 'Rating submitted successfully' });
     } catch (error: any) {
         console.error('[ERROR] Failed to submit rating:', {
-            deliveryId: id,
-            rating,
-            customerId,
+            deliveryId: req?.params?.id,
+            rating: req?.body?.rating,
+            customerId: req?.user?.id,
             error: error.message,
             stack: error.stack
         });

@@ -7,6 +7,7 @@ exports.getReconciliationReport = exports.getRiderAnalytics = exports.declineRid
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
 const sms_1 = require("../utils/sms");
+const auditService_1 = require("../services/auditService");
 const updateLocation = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -67,7 +68,16 @@ const getAllRiders = async (req, res) => {
         const riders = await prisma_1.default.user.findMany({
             where: { role: client_1.Role.RIDER },
             orderBy: { id: 'desc' },
-            include: { vehicles: true }
+            include: {
+                vehicles: true,
+                approvedBy: {
+                    select: { name: true }
+                },
+                declinedBy: {
+                    select: { name: true }
+                },
+                guarantor: true
+            }
         });
         res.json(riders);
     }
@@ -81,10 +91,17 @@ const approveRider = async (req, res) => {
     try {
         if (req.user.role !== 'ADMIN')
             return res.status(403).json({ message: 'Forbidden' });
+        const adminId = req.user.id;
         const riderId = parseInt(req.params.id);
         const updatedUser = await prisma_1.default.user.update({
             where: { id: riderId },
-            data: { isVerified: true, isRejected: false, rejectionReason: null } // Clear rejection if approved
+            data: {
+                isVerified: true,
+                isRejected: false,
+                rejectionReason: null,
+                approvedById: adminId,
+                approvedAt: new Date()
+            }
         });
         // Notify Rider via Socket
         socket_1.io.to(riderId.toString()).emit('system_notification', {
@@ -96,6 +113,12 @@ const approveRider = async (req, res) => {
         if (updatedUser.phone) {
             await (0, sms_1.sendSMS)(updatedUser.phone, 'PRESTIGE: Your rider account has been approved. You can now go online and accept deliveries.');
         }
+        // Descriptive Audit Log
+        await (0, auditService_1.logActivity)(adminId, 'RIDER_APPROVED', {
+            riderId: updatedUser.id,
+            riderName: updatedUser.name,
+            details: `Admin approved rider application for ${updatedUser.name}.`
+        }, req.ip);
         res.json(updatedUser);
     }
     catch (error) {
@@ -110,7 +133,7 @@ const assignBike = async (req, res) => {
         if (req.user.role !== 'ADMIN')
             return res.status(403).json({ message: 'Forbidden' });
         const riderId = parseInt(req.params.id);
-        const { plateNumber, model } = req.body;
+        const { plateNumber, model, chassisNumber } = req.body;
         if (!plateNumber || !model) {
             return res.status(400).json({ message: 'Plate Number and Model are required' });
         }
@@ -119,6 +142,7 @@ const assignBike = async (req, res) => {
                 type: 'BIKE',
                 plateNumber,
                 model,
+                chassisNumber,
                 riderId
             }
         });
@@ -247,6 +271,7 @@ const declineRider = async (req, res) => {
     try {
         if (req.user.role !== 'ADMIN')
             return res.status(403).json({ message: 'Forbidden' });
+        const adminId = req.user.id;
         const riderId = parseInt(req.params.id);
         const { reason } = req.body;
         if (!reason) {
@@ -254,7 +279,12 @@ const declineRider = async (req, res) => {
         }
         const updatedUser = await prisma_1.default.user.update({
             where: { id: riderId },
-            data: { isRejected: true, rejectionReason: reason }
+            data: {
+                isRejected: true,
+                rejectionReason: reason,
+                declinedById: adminId,
+                declinedAt: new Date()
+            }
         });
         // Notify Rider via Socket
         socket_1.io.to(riderId.toString()).emit('system_notification', {
@@ -266,6 +296,13 @@ const declineRider = async (req, res) => {
         if (updatedUser.phone) {
             await (0, sms_1.sendSMS)(updatedUser.phone, `PRESTIGE: Your rider account application was declined. Reason: ${reason}`);
         }
+        // Descriptive Audit Log
+        await (0, auditService_1.logActivity)(adminId, 'RIDER_DECLINED', {
+            riderId: updatedUser.id,
+            riderName: updatedUser.name,
+            reason,
+            details: `Admin declined rider application for ${updatedUser.name}. Reason: ${reason}`
+        }, req.ip);
         res.json(updatedUser);
     }
     catch (error) {

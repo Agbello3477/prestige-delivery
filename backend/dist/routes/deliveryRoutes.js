@@ -181,6 +181,6 @@ router.patch('/:id/status', authMiddleware_1.authenticate, upload_1.upload.field
  *         description: Location updated
  */
 router.patch('/:id/location', authMiddleware_1.authenticate, deliveryController_1.updateDeliveryLocation);
-// Rate a completed delivery (Customer only)
-router.post('/:id/rate', authMiddleware_1.authenticate, deliveryController_1.rateDelivery);
+// Cancel a pending delivery (Customer only)
+router.post('/:id/cancel', authMiddleware_1.authenticate, deliveryController_1.cancelDelivery);
 exports.default = router;

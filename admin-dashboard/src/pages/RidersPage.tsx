@@ -57,7 +57,7 @@ const RidersPage = () => {
                 }
             }
         }
-    }, [riders, location.search, navigate]);
+    }, [riders, location.search, navigate, selectedRider]);
 
     const loadRiders = async () => {
         try {
@@ -230,6 +230,11 @@ const RidersPage = () => {
                         <div class="info-row"><span class="info-label">NIN NUMBER:</span> <span class="info-value">${selectedRider.nin || 'N/A'}</span></div>
                         <div class="info-row"><span class="info-label">HOME ADDRESS:</span> <span class="info-value">${selectedRider.address || 'N/A'}</span></div>
                         <div class="info-row"><span class="info-label">STATE OF ORIGIN:</span> <span class="info-value">${selectedRider.stateOfOrigin || 'N/A'}</span></div>
+                        <div style="margin-top: 15px; border-top: 1px dashed #fecaca; padding-top: 15px;">
+                            <div class="info-row"><span class="info-label">BANK NAME:</span> <span class="info-value">${selectedRider.bankName || 'N/A'}</span></div>
+                            <div class="info-row"><span class="info-label">ACCOUNT NUMBER:</span> <span class="info-value">${selectedRider.accountNumber || 'N/A'}</span></div>
+                            <div class="info-row"><span class="info-label">ACCOUNT NAME:</span> <span class="info-value">${selectedRider.accountName || 'N/A'}</span></div>
+                        </div>
                         <div class="info-row"><span class="info-label">VERIFIED STATUS:</span> <span class="info-value" style="color: ${selectedRider.isVerified ? '#059669' : '#d97706'}; font-weight: 800;">${selectedRider.isVerified ? 'APPROVED' : 'PENDING'}</span></div>
                         ${selectedRider.isVerified && selectedRider.approvedBy ? `
                             <div class="info-row"><span class="info-label">VERIFIED BY:</span> <span class="info-value">${selectedRider.approvedBy.name}</span></div>
@@ -453,6 +458,28 @@ const RidersPage = () => {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Bank Details */}
+                                <div className="col-span-2 mt-4 pt-4 border-t border-gray-100 bg-gray-50/50 p-4 rounded-lg">
+                                    <h4 className="font-bold text-gray-900 mb-3 flex items-center">
+                                        <span className="w-1.5 h-1.5 bg-brand-600 rounded-full mr-2"></span>
+                                        Bank Details
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Bank Name</p>
+                                            <p className="font-bold text-gray-900">{selectedRider.bankName || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Account Number</p>
+                                            <p className="font-bold text-gray-900">{selectedRider.accountNumber || 'N/A'}</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Account Name</p>
+                                            <p className="font-bold text-gray-900 uppercase tracking-tighter">{selectedRider.accountName || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Performance & Analytics */}

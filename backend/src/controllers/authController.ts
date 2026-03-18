@@ -21,6 +21,9 @@ const registerSchema = z.object({
     guarantorAddress: z.string().optional(),
     guarantorRelationship: z.string().optional(),
     guarantorNin: z.string().optional(),
+    bankName: z.string().optional(),
+    accountName: z.string().optional(),
+    accountNumber: z.string().optional(),
 });
 
 const registerWithGenderSchema = registerSchema.extend({
@@ -66,7 +69,8 @@ export const register = async (req: Request, res: Response) => {
         const { 
             email, password, name, role, phone, nin, address, stateOfOrigin, 
             isBikeOwner, plateNumber, gender,
-            guarantorName, guarantorPhone, guarantorAddress, guarantorRelationship, guarantorNin
+            guarantorName, guarantorPhone, guarantorAddress, guarantorRelationship, guarantorNin,
+            bankName, accountName, accountNumber
         } = (parsedData as any);
 
         // Security: Prevent public ADMIN registration
@@ -135,8 +139,11 @@ export const register = async (req: Request, res: Response) => {
                         relationship: guarantorRelationship,
                         nin: guarantorNin
                     }
-                } : undefined
-            },
+                } : undefined,
+                bankName,
+                accountName,
+                accountNumber
+            } as any,
         });
 
         // If Rider and has vehicle info

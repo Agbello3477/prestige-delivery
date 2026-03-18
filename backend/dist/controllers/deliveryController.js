@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rateDelivery = exports.updateDeliveryLocation = exports.updateDeliveryStatus = exports.getPendingDeliveries = exports.getDeliveryById = exports.getMyDeliveries = exports.getAllDeliveries = exports.createDelivery = void 0;
+exports.cancelDelivery = exports.rateDelivery = exports.updateDeliveryLocation = exports.updateDeliveryStatus = exports.getPendingDeliveries = exports.getDeliveryById = exports.getMyDeliveries = exports.getAllDeliveries = exports.createDelivery = void 0;
 const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const zod_1 = require("zod");
@@ -137,7 +137,9 @@ const getDeliveryById = async (req, res) => {
             rider: delivery.rider ? {
                 name: delivery.rider.name,
                 phone: delivery.rider.phone,
-                vehicleType: delivery.rider.vehicles[0]?.type || 'Unknown'
+                vehicleType: delivery.rider.vehicles[0]?.type || 'Unknown',
+                vehicles: delivery.rider.vehicles,
+                passportUrl: delivery.rider.passportUrl
             } : null,
             currentLocation: delivery.trackingLogs[0] ? {
                 lat: delivery.trackingLogs[0].lat,
@@ -285,8 +287,40 @@ const rateDelivery = async (req, res) => {
         res.json({ message: 'Rating submitted successfully' });
     }
     catch (error) {
-        console.error('Error rating delivery:', error);
+        console.error('[ERROR] Failed to submit rating:', {
+            deliveryId: req?.params?.id,
+            rating: req?.body?.rating,
+            customerId: req?.user?.id,
+            error: error.message,
+            stack: error.stack
+        });
         res.status(500).json({ message: 'Failed to submit rating', error: error.message });
     }
 };
 exports.rateDelivery = rateDelivery;
+const cancelDelivery = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const customerId = req.user.id;
+        const delivery = await prisma_1.default.delivery.findUnique({ where: { id } });
+        if (!delivery) {
+            return res.status(404).json({ message: 'Delivery not found' });
+        }
+        if (delivery.customerId !== customerId) {
+            return res.status(403).json({ message: 'Only the customer can cancel this delivery' });
+        }
+        if (delivery.status !== 'PENDING') {
+            return res.status(400).json({ message: 'Can only logistically cancel pending deliveries' });
+        }
+        const updatedDelivery = await prisma_1.default.delivery.update({
+            where: { id },
+            data: { status: 'CANCELLED' }
+        });
+        res.json({ message: 'Delivery cancelled successfully', delivery: updatedDelivery });
+    }
+    catch (error) {
+        console.error('Error cancelling delivery:', error);
+        res.status(500).json({ message: 'Failed to cancel delivery', error: error.message });
+    }
+};
+exports.cancelDelivery = cancelDelivery;

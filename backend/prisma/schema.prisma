@@ -80,6 +80,9 @@ model User {
   passportUrl       String?
   ninSlipUrl        String?
   isBikeOwner       Boolean   @default(false)
+  bankName          String?
+  accountName       String?
+  accountNumber     String?
   isRejected        Boolean   @default(false)
   rejectionReason   String?
   isBlocked         Boolean   @default(false)

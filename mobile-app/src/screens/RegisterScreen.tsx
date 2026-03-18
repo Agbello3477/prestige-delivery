@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Alert, ScrollView, Image, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Alert, ScrollView, Image, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +29,9 @@ const RegisterScreen = () => {
         guarantorAddress: '',
         guarantorRelationship: '',
         guarantorNin: '',
+        bankName: '',
+        accountNumber: '',
+        accountName: '',
     });
 
     const [passportImage, setPassportImage] = useState<string | null>(null);
@@ -109,6 +112,10 @@ const RegisterScreen = () => {
                 Alert.alert('Error', 'Please fill in all Guarantor details');
                 return;
             }
+            if (!formData.bankName || !formData.accountNumber || !formData.accountName) {
+                Alert.alert('Error', 'Please fill in all Bank details');
+                return;
+            }
         }
 
         try {
@@ -138,6 +145,10 @@ const RegisterScreen = () => {
                 data.append('guarantorAddress', formData.guarantorAddress);
                 data.append('guarantorRelationship', formData.guarantorRelationship);
                 data.append('guarantorNin', formData.guarantorNin);
+
+                data.append('bankName', formData.bankName);
+                data.append('accountNumber', formData.accountNumber);
+                data.append('accountName', formData.accountName);
 
                 if (passportImage) {
                     const filename = passportImage.split('/').pop();
@@ -182,7 +193,11 @@ const RegisterScreen = () => {
 
     return (
         <SafeAreaView className="flex-1 bg-white">
-            <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+            >
+                <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 16 }}>
                 <Text className="text-3xl font-bold text-brand-900 mb-2">Create Account</Text>
                 <Text className="text-gray-500 mb-8">Join Prestige Delivery today</Text>
 
@@ -382,6 +397,30 @@ const RegisterScreen = () => {
                                     multiline
                                 />
                             </View>
+
+                            <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderColor: '#E5E7EB' }}>
+                                <Text style={{ fontWeight: 'bold', color: '#111827', marginBottom: 16 }}>Bank Details</Text>
+                                
+                                <TextInput
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    placeholder="Bank Name"
+                                    value={formData.bankName}
+                                    onChangeText={(text) => setFormData({ ...formData, bankName: text })}
+                                />
+                                <TextInput
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    placeholder="Account Number"
+                                    value={formData.accountNumber}
+                                    onChangeText={(text) => setFormData({ ...formData, accountNumber: text })}
+                                    keyboardType="numeric"
+                                />
+                                <TextInput
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    placeholder="Account Name"
+                                    value={formData.accountName}
+                                    onChangeText={(text) => setFormData({ ...formData, accountName: text })}
+                                />
+                            </View>
                         </View>
                     ) : null}
 
@@ -411,6 +450,7 @@ const RegisterScreen = () => {
                     <View className="h-20" />
                 </View>
             </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView >
     );
 };

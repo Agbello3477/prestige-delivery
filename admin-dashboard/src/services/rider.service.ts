@@ -23,6 +23,9 @@ export interface Rider {
     approvedAt?: string;
     declinedBy?: { name: string };
     declinedAt?: string;
+    bankName?: string;
+    accountName?: string;
+    accountNumber?: string;
     guarantor?: {
         name: string;
         phone: string;
