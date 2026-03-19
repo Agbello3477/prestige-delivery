@@ -91,21 +91,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const register = async (data: any) => {
         setLoading(true);
         try {
-            const isFormData = data instanceof FormData;
-            // IMPORTANT: Never set Content-Type manually for FormData in Axios/React-Native. 
-            // It breaks the boundary string.
-            const headers: any = isFormData ? {} : { 'Content-Type': 'application/json' };
+            const isFormData = data instanceof FormData || (data && data._parts !== undefined);
+            const headers: any = isFormData 
+                ? { 'Content-Type': 'multipart/form-data' } 
+                : { 'Content-Type': 'application/json' };
 
             // Backup current token and CLEAR it for this specific public call
             const originalToken = api.defaults.headers.common['Authorization'];
             delete api.defaults.headers.common['Authorization'];
 
             try {
-                // Pre-check: Verify we can even reach the server
-                console.log(`[DEBUG] Attempting connection to: ${BACKEND_URL}/api/health`);
-                
                 await api.post('/auth/register', data, { headers });
-                // User is not automatically logged in. They will be redirected to Login.
             } finally {
                 // RESTORE the token for future calls if it existed
                 if (originalToken) {
@@ -113,13 +109,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
         } catch (error: any) {
-            console.error('Registration failed - Final Diagnosis:');
+            console.error('Registration failed:');
             if (error.response) {
-                console.error('SERVER RESPONDED WITH ERROR:', error.response.status, error.response.data);
+                console.error('Server error:', error.response.status, error.response.data);
             } else if (error.request) {
-                console.error(`NO RESPONSE FROM SERVER at ${BACKEND_URL} - Possible Network/URL blocker.`);
+                console.error(`Network error: Could not reach ${BACKEND_URL}`);
             } else {
-                console.error(`REQUEST SETUP FAILED for ${BACKEND_URL}:`, error.message);
+                console.error(`Request error:`, error.message);
             }
             throw error;
         } finally {
