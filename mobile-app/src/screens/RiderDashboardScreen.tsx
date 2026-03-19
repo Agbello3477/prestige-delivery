@@ -154,7 +154,7 @@ const RiderDashboardScreen = () => {
         }
     };
 
-    const handleProofUpload = async (proof: string, type: 'VIDEO' | 'SIGNATURE') => {
+    const handleProofUpload = async (proof: string, type: 'PICTURE' | 'SIGNATURE') => {
         if (!activeDelivery) return;
         setLoading(true);
         try {
@@ -162,12 +162,12 @@ const RiderDashboardScreen = () => {
             formData.append('status', 'DELIVERED');
             formData.append('proofType', type);
 
-            if (type === 'VIDEO') {
+            if (type === 'PICTURE') {
                 // @ts-ignore
                 formData.append('proof', {
                     uri: proof,
-                    name: 'proof_video.mp4',
-                    type: 'video/mp4'
+                    name: 'proof_image.jpg',
+                    type: 'image/jpeg'
                 });
             } else {
                 // Signature is base64
@@ -331,10 +331,10 @@ const RiderDashboardScreen = () => {
                                     "Select Proof of Delivery Method:",
                                     [
                                         {
-                                            text: "1. Video (10 Seconds)",
+                                            text: "1. Take Picture",
                                             onPress: () => (navigation as any).navigate('RecordProof', {
-                                                onVideoRecorded: async (uri: string) => {
-                                                    await handleProofUpload(uri, 'VIDEO');
+                                                onProofRecorded: async (uri: string) => {
+                                                    await handleProofUpload(uri, 'PICTURE');
                                                 }
                                             })
                                         },

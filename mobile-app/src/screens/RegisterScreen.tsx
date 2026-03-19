@@ -119,15 +119,16 @@ const RegisterScreen = () => {
         }
 
         try {
-            const data = new FormData();
-            data.append('name', formData.name);
-            data.append('email', formData.email);
-            data.append('password', formData.password);
-            if (formData.phone) data.append('phone', formData.phone);
-            data.append('role', formData.role);
-            if (formData.gender) data.append('gender', formData.gender);
+            let registrationData: any;
 
             if (formData.role === 'RIDER') {
+                const data = new FormData();
+                data.append('name', formData.name);
+                data.append('email', formData.email);
+                data.append('password', formData.password);
+                if (formData.phone) data.append('phone', formData.phone);
+                data.append('role', formData.role);
+                if (formData.gender) data.append('gender', formData.gender);
                 data.append('nin', formData.nin);
                 data.append('address', formData.address);
                 data.append('stateOfOrigin', formData.stateOfOrigin);
@@ -165,9 +166,20 @@ const RegisterScreen = () => {
                     // @ts-ignore
                     data.append('ninSlip', { uri: ninImage, name: filename, type });
                 }
+                registrationData = data;
+            } else {
+                // For CUSTOMER and PARTNER, send a simple JSON object
+                registrationData = {
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password,
+                    phone: formData.phone,
+                    role: formData.role,
+                    gender: formData.gender
+                };
             }
 
-            await register(data);
+            await register(registrationData);
             Alert.alert(
                 'Success',
                 'Account created! Please log in to continue.',

@@ -9,7 +9,7 @@ import api from '../services/api';
 
 // Extract base URL from api service to ensure consistency (remove /api suffix)
 // @ts-ignore
-const SOCKET_URL = api.defaults.baseURL?.replace('/api', '') || 'http://172.18.19.91:4000';
+const SOCKET_URL = api.defaults.baseURL?.replace('/api', '') || 'https://prestige-delivery-backend.onrender.com';
 
 interface Message {
     id: number;
@@ -28,38 +28,60 @@ const ChatScreen = () => {
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState('');
+    const [loading, setLoading] = useState(true);
     const [socket, setSocket] = useState<Socket | null>(null);
     const flatListRef = useRef<FlatList>(null);
 
+    // 1. Fetch Chat History
     useEffect(() => {
-        // Initialize Socket
-        const newSocket = io(SOCKET_URL);
+        const fetchHistory = async () => {
+            try {
+                const response = await api.get(`/chat/${receiverId}`);
+                setMessages(response.data);
+                scrollToBottom();
+            } catch (error) {
+                console.error('Failed to fetch chat history', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user && receiverId) {
+            fetchHistory();
+        }
+    }, [user, receiverId]);
+
+    // 2. Initialize Socket
+    useEffect(() => {
+        if (!user) return;
+
+        const newSocket = io(SOCKET_URL, {
+            transports: ['websocket'],
+            forceNew: true
+        });
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
             console.log('Connected to socket server');
-            if (user) {
-                newSocket.emit('join', user.id.toString());
-            }
+            newSocket.emit('join', user.id.toString());
         });
 
         newSocket.on('receive_message', (message: Message) => {
+            // Only add if it belongs to this current chat
             if (
                 (message.senderId === receiverId && message.receiverId === user?.id) ||
                 (message.senderId === user?.id && message.receiverId === receiverId)
             ) {
-                setMessages(prev => [...prev, message]);
+                setMessages(prev => {
+                    if (prev.find(m => m.id === message.id)) return prev;
+                    return [...prev, message];
+                });
                 scrollToBottom();
             }
         });
 
         newSocket.on('message_sent', (message: Message) => {
-            // Optimistic update might duplicate if we also listen to this, 
-            // but good for confirmation. ideally we just append locally 
-            // and confirm. specific implementation depends on backend echo.
-            // backend currently emits 'message_sent' back to sender.
             setMessages(prev => {
-                // Avoid duplicates if already added
                 if (prev.find(m => m.id === message.id)) return prev;
                 return [...prev, message];
             });

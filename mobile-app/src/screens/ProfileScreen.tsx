@@ -160,6 +160,14 @@ const ProfileScreen = () => {
 
 
                 <TouchableOpacity
+                    className="w-full bg-brand-50 border border-brand-200 p-4 rounded-xl items-center mt-6 flex-row justify-center"
+                    onPress={() => navigation.navigate('ChangePassword' as never)}
+                >
+                    <Ionicons name="key-outline" size={20} color="#0284c7" className="mr-2" />
+                    <Text className="text-brand-700 font-bold text-lg">Change Password</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                     className="w-full bg-red-50 border border-red-200 p-4 rounded-xl items-center mt-4"
                     onPress={logout}
                 >

@@ -14,6 +14,8 @@ import CallScreen from '../screens/CallScreen';
 import VendorListScreen from '../screens/VendorListScreen';
 import VendorMenuScreen from '../screens/VendorMenuScreen';
 import PharmacyPrescriptionUploadScreen from '../screens/PharmacyPrescriptionUploadScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import { useAuth } from '../context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -41,6 +43,7 @@ const RootNavigator = () => {
                         <Stack.Screen name="SignatureCapture" component={SignatureCaptureScreen} />
                         <Stack.Screen name="RecordProof" component={RecordProofScreen} />
                         <Stack.Screen name="Call" component={CallScreen} />
+                        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
                     </>
                 ) : (
                     <>
@@ -54,12 +57,14 @@ const RootNavigator = () => {
                         <Stack.Screen name="VendorList" component={VendorListScreen} />
                         <Stack.Screen name="VendorMenu" component={VendorMenuScreen} />
                         <Stack.Screen name="PharmacyPrescriptionUpload" component={PharmacyPrescriptionUploadScreen} />
+                        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
                     </>
                 )
             ) : (
                 <>
                     <Stack.Screen name="Login" component={LoginScreen} />
                     <Stack.Screen name="Register" component={RegisterScreen} />
+                    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
                 </>
             )}
         </Stack.Navigator>

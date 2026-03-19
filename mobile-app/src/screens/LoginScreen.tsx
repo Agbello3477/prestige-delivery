@@ -58,12 +58,18 @@ const LoginScreen = () => {
                     <View>
                         <Text className="text-gray-700 mb-1 ml-1">Password</Text>
                         <TextInput
-                            className="w-full border border-gray-300 rounded-xl p-4 text-gray-900 bg-gray-50 mb-4"
+                            className="w-full border border-gray-300 rounded-xl p-4 text-gray-900 bg-gray-50 mb-1"
                             placeholder="Enter your password"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
                         />
+                        <TouchableOpacity 
+                            onPress={() => navigation.navigate('ForgotPassword')}
+                            className="self-end mb-4"
+                        >
+                            <Text className="text-brand-600 font-medium">Forgot Password?</Text>
+                        </TouchableOpacity>
                     </View>
 
                     <TouchableOpacity

@@ -93,11 +93,16 @@ const ChatPage: React.FC = () => {
         });
     }, [currentUser?.id]);
 
+    const socketRef = useRef<Socket | null>(null);
+
     // Initialize Socket Connection
     useEffect(() => {
         if (!currentUser) return;
 
-        const newSocket = io(SOCKET_URL);
+        const newSocket = io(SOCKET_URL, {
+            transports: ['websocket']
+        });
+        socketRef.current = newSocket;
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
@@ -107,32 +112,62 @@ const ChatPage: React.FC = () => {
 
         // Listen for new messages
         newSocket.on('receive_message', (message: Message) => {
-            // If the incoming message belongs to the currently active chat
-            if (activeChatId && (message.senderId === activeChatId || message.receiverId === activeChatId)) {
-                setMessages(prev => [...prev, message]);
-                scrollToBottom();
-            }
-
-            // Update recent chats list
+            // Use functional updates to avoid dependency issues
+            setMessages(prev => {
+                // If the incoming message belongs to the currently active chat
+                // We use state values from the closure, but activeChatId from outer scope might be stale
+                // However, in this specific hook, we have activeChatId as a dependency OR we skip it
+                return [...prev, message];
+            });
+            scrollToBottom();
             updateRecentChats(message);
         });
 
         newSocket.on('message_sent', (message: Message) => {
-            if (activeChatId && (message.senderId === activeChatId || message.receiverId === activeChatId)) {
+            setMessages(prev => {
+                if (prev.find(m => m.id === message.id)) return prev;
+                return [...prev, message];
+            });
+            scrollToBottom();
+            updateRecentChats(message);
+        });
+
+        return () => {
+            newSocket.disconnect();
+            socketRef.current = null;
+            setSocket(null);
+        };
+    }, [currentUser, updateRecentChats]); // Removed activeChatId to avoid reconnects
+
+    // Effect to handle messages filtering if needed, or we just rely on the receiver/sender IDs
+    // The current receive_message logic in the previous version was checking activeChatId.
+    // To keep it simple and avoid reconnects, we can check inside the listener using a ref for activeChatId.
+    const activeChatIdRef = useRef(activeChatId);
+    useEffect(() => {
+        activeChatIdRef.current = activeChatId;
+    }, [activeChatId]);
+
+    // Enhanced receive_message listener logic
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleReceive = (message: Message) => {
+            const currentId = activeChatIdRef.current;
+            if (currentId && (message.senderId === currentId || message.receiverId === currentId)) {
                 setMessages(prev => {
                     if (prev.find(m => m.id === message.id)) return prev;
                     return [...prev, message];
                 });
                 scrollToBottom();
             }
-            // Update recent chats list
             updateRecentChats(message);
-        });
-
-        return () => {
-            newSocket.disconnect();
         };
-    }, [currentUser, activeChatId, updateRecentChats]); // Re-attach listener if active chat changes (optional optimizations possible)
+
+        socket.on('receive_message', handleReceive);
+        return () => {
+            socket.off('receive_message', handleReceive);
+        };
+    }, [socket, updateRecentChats]);
 
     // Load active chat messages
     useEffect(() => {

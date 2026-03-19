@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,11 +8,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function RecordProofScreen() {
     const [facing, setFacing] = useState<CameraType>('back');
     const [permission, requestPermission] = useCameraPermissions();
-    const [isRecording, setIsRecording] = useState(false);
+    const [isCapturing, setIsCapturing] = useState(false);
     const cameraRef = useRef<CameraView>(null);
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const { onVideoRecorded } = route.params || {};
+    const { onProofRecorded } = route.params || {};
 
     if (!permission) {
         // Camera permissions are still loading.
@@ -29,24 +29,25 @@ export default function RecordProofScreen() {
         );
     }
 
-    const startRecording = async () => {
-        if (cameraRef.current) {
-            setIsRecording(true);
+    const takePicture = async () => {
+        if (cameraRef.current && !isCapturing) {
+            setIsCapturing(true);
             try {
-                const video = await cameraRef.current.recordAsync({
-                    maxDuration: 10, // 10 seconds
+                const photo = await cameraRef.current.takePictureAsync({
+                    quality: 0.7,
+                    base64: false,
                 });
-                setIsRecording(false);
-                if (video?.uri) {
+                setIsCapturing(false);
+                if (photo?.uri) {
                     Alert.alert(
-                        "Video Recorded",
-                        "Do you want to use this video as proof?",
+                        "Photo Captured",
+                        "Do you want to use this photo as proof?",
                         [
                             { text: "Retake", onPress: () => { } },
                             {
-                                text: "Use Video",
+                                text: "Use Photo",
                                 onPress: () => {
-                                    if (onVideoRecorded) onVideoRecorded(video.uri);
+                                    if (onProofRecorded) onProofRecorded(photo.uri);
                                     navigation.goBack();
                                 }
                             }
@@ -55,14 +56,9 @@ export default function RecordProofScreen() {
                 }
             } catch (error) {
                 console.error(error);
-                setIsRecording(false);
+                setIsCapturing(false);
+                Alert.alert("Error", "Failed to take picture");
             }
-        }
-    };
-
-    const stopRecording = () => {
-        if (cameraRef.current && isRecording) {
-            cameraRef.current.stopRecording();
         }
     };
 
@@ -76,14 +72,11 @@ export default function RecordProofScreen() {
                 style={styles.camera}
                 facing={facing}
                 ref={cameraRef}
-                mode="video"
+                mode="picture"
             >
                 <SafeAreaView style={styles.uiContainer}>
                     <TouchableOpacity
-                        onPress={() => {
-                            if (isRecording) stopRecording();
-                            navigation.goBack();
-                        }}
+                        onPress={() => navigation.goBack()}
                         className="self-start bg-black/50 p-2 rounded-full m-4"
                     >
                         <Ionicons name="close" size={24} color="white" />
@@ -91,18 +84,25 @@ export default function RecordProofScreen() {
 
                     <View style={styles.controlsContainer}>
                         <TouchableOpacity
-                            onPress={isRecording ? stopRecording : startRecording}
-                            style={[
-                                styles.recordButton,
-                                isRecording ? styles.recording : {}
-                            ]}
-                        />
+                            onPress={toggleCameraFacing}
+                            className="bg-black/50 p-3 rounded-full mr-10 self-center"
+                        >
+                            <Ionicons name="camera-reverse" size={28} color="white" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={takePicture}
+                            style={styles.captureButton}
+                        >
+                            <View style={styles.captureButtonInner} />
+                        </TouchableOpacity>
                     </View>
                 </SafeAreaView>
             </CameraView>
-            {isRecording && (
-                <View className="absolute top-12 self-center bg-red-600 px-4 py-1 rounded-full mt-10">
-                    <Text className="text-white font-bold animate-pulse">Recording...</Text>
+            {isCapturing && (
+                <View className="absolute inset-0 bg-black/30 items-center justify-center">
+                    <ActivityIndicator size="large" color="white" />
+                    <Text className="text-white font-bold mt-2">Capturing...</Text>
                 </View>
             )}
         </View>
@@ -125,21 +125,23 @@ const styles = StyleSheet.create({
     controlsContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: 40,
+        alignItems: 'center',
+        marginBottom: 60,
     },
-    recordButton: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        borderWidth: 5,
+    captureButton: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        borderWidth: 6,
         borderColor: 'white',
-        backgroundColor: 'red',
+        backgroundColor: 'transparent',
+        justifyContent: 'center',
+        alignItems: 'center'
     },
-    recording: {
-        backgroundColor: 'white',
+    captureButtonInner: {
         width: 60,
         height: 60,
-        borderRadius: 5,
-        transform: [{ translateX: 5 }, { translateY: 5 }]
+        borderRadius: 30,
+        backgroundColor: 'white',
     }
 });

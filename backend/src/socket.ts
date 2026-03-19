@@ -9,7 +9,8 @@ export const initSocket = (httpServer: HttpServer) => {
         cors: {
             origin: '*',
             methods: ['GET', 'POST']
-        }
+        },
+        transports: ['websocket', 'polling']
     });
 
     io.on('connection', (socket) => {
