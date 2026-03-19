@@ -31,13 +31,18 @@ const ChangePasswordScreen = () => {
 
         setLoading(true);
         try {
-            await api.post('/auth/change-password', {
+            await api.patch('/auth/change-password', {
                 oldPassword,
                 newPassword
             });
             Alert.alert('Success', 'Password changed successfully');
             navigation.goBack();
         } catch (error: any) {
+            console.error('Password Change Error:', error);
+            if (error.response) {
+                console.error('Error Status:', error.response.status);
+                console.error('Error Data:', error.response.data);
+            }
             const message = error.response?.data?.message || 'Failed to change password';
             Alert.alert('Error', message);
         } finally {
