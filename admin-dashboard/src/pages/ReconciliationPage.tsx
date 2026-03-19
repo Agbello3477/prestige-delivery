@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getReconciliationReport } from '../services/rider.service';
-import { Search, Info } from 'lucide-react';
+import { getReconciliationReport, clearCOD } from '../services/rider.service';
+import { Search, Info, CheckCircle2 } from 'lucide-react';
 
 interface ReconciliationReport {
     id: number;
@@ -23,24 +23,37 @@ const ReconciliationPage = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        const fetchReports = async () => {
-            try {
-                const data = await getReconciliationReport();
-                setReports(data);
-            } catch (error) {
-                console.error('Failed to load reconciliation reports', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchReports = async () => {
+        try {
+            setLoading(true);
+            const data = await getReconciliationReport();
+            setReports(data || []);
+        } catch (error) {
+            console.error('Failed to load reconciliation reports', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchReports();
     }, []);
 
+    const handleClear = async (riderId: number) => {
+        if (!window.confirm('Are you sure you want to clear all pending COD for this rider? This will mark all unsettled deliveries as reconciled.')) return;
+        
+        try {
+            const data = await clearCOD(riderId);
+            alert(data.message || 'COD cleared successfully');
+            fetchReports(); // Refresh data
+        } catch (error) {
+            console.error('Failed to clear COD', error);
+            alert('Failed to clear COD. Please try again.');
+        }
+    };
+
     const filteredReports = reports.filter(r =>
-        r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.phone.includes(searchTerm)
+        (r.name.toLowerCase().includes(searchTerm.toLowerCase()) || r.phone.includes(searchTerm))
     );
 
     // Aggregate Totals
@@ -99,8 +112,7 @@ const ReconciliationPage = () => {
                 <div className="text-sm text-blue-800">
                     <strong className="block mb-1 font-bold">How is Remittance calculated?</strong>
                     The <strong>Pending Remittance</strong> column represents: <code className="bg-blue-100 px-1 rounded">Total COD Cash Collected - Rider's 70% Global Commission</code>.
-                    If positive (<span className="text-red-600 font-bold px-1 rounded border border-red-200 bg-red-50">Red</span>), the Rider collected more cash than their 70% overall cut natively covers, meaning they owe Prestige the difference.
-                    If negative (<span className="text-green-600 font-bold px-1 rounded border border-green-200 bg-green-50">Green</span>), Prestige collected more digital (Transfer/POS) revenue representing the Rider's 70% cut than the cash they hold, meaning Prestige owes the Rider.
+                    Only <strong>unsettled</strong> deliveries are shown here. Once a rider pays, click "Settle / Clear" to reset their balance.
                 </div>
             </div>
 
@@ -116,59 +128,76 @@ const ReconciliationPage = () => {
                                 <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Total COD</th>
                                 <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Rider Commission (70%)</th>
                                 <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Pending Remittance</th>
+                                <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                                         Loading reconciliation data...
                                     </td>
                                 </tr>
                             ) : filteredReports.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                                        No verified riders or records found.
+                                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                        No active COD balances found.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredReports.map((report) => (
-                                    <tr key={report.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="font-bold text-gray-900">{report.name}</div>
-                                            <div className="text-sm text-gray-500">{report.phone}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                                                {report.totalDeliveries} trips
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-gray-700">
-                                            ₦{report.financials.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-amber-700">
-                                            ₦{report.financials.totalCOD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-brand-700">
-                                            ₦{report.financials.riderCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <span className={`px-3 py-1.5 rounded-lg font-black ${report.financials.codRemittance > 0
-                                                    ? 'bg-red-50 text-red-700 border border-red-200'
-                                                    : report.financials.codRemittance < 0
-                                                        ? 'bg-green-50 text-green-700 border border-green-200'
-                                                        : 'bg-gray-50 text-gray-600 border border-gray-200'
-                                                }`}>
-                                                {report.financials.codRemittance > 0
-                                                    ? `₦${report.financials.codRemittance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Owes)`
-                                                    : report.financials.codRemittance < 0
-                                                        ? `₦${Math.abs(report.financials.codRemittance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Owed)`
-                                                        : 'Settled'
-                                                }
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
+                                filteredReports.map((report) => {
+                                    const isOwed = report.financials.codRemittance < 0;
+                                    const owes = report.financials.codRemittance > 0;
+                                    
+                                    return (
+                                        <tr key={report.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="font-bold text-gray-900">{report.name}</div>
+                                                <div className="text-sm text-gray-500">{report.phone}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                                    {report.totalDeliveries} trips
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-gray-700">
+                                                ₦{report.financials.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-amber-700">
+                                                ₦{report.financials.totalCOD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-brand-700">
+                                                ₦{report.financials.riderCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <span className={`px-3 py-1.5 rounded-lg font-black ${owes
+                                                        ? 'bg-red-50 text-red-700 border border-red-200'
+                                                        : isOwed
+                                                            ? 'bg-green-50 text-green-700 border border-green-200'
+                                                            : 'bg-gray-50 text-gray-600 border border-gray-200'
+                                                    }`}>
+                                                    {owes
+                                                        ? `₦${report.financials.codRemittance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Owes)`
+                                                        : isOwed
+                                                            ? `₦${Math.abs(report.financials.codRemittance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Owed)`
+                                                            : 'Settled'
+                                                    }
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                {owes && (
+                                                    <button
+                                                        onClick={() => handleClear(report.id)}
+                                                        className="inline-flex items-center gap-1.5 bg-brand-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs hover:bg-brand-700 transition-colors shadow-sm"
+                                                    >
+                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                        CLEAR COD
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

@@ -11,6 +11,26 @@ const ProfileScreen = () => {
     const { user, logout } = useAuth();
     const navigation = useNavigation();
     const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
+    const [financials, setFinancials] = useState<any>(null);
+    const [loadingFin, setLoadingFin] = useState(false);
+
+    React.useEffect(() => {
+        if (user?.role === 'RIDER') {
+            fetchFinancials();
+        }
+    }, [user]);
+
+    const fetchFinancials = async () => {
+        try {
+            setLoadingFin(true);
+            const response = await api.get(`/users/riders/${user?.id}/analytics`);
+            setFinancials(response.data.summary);
+        } catch (error) {
+            console.error('Failed to fetch financials', error);
+        } finally {
+            setLoadingFin(false);
+        }
+    };
 
     const handleImageError = (key: string) => {
         setImageErrors(prev => ({ ...prev, [key]: true }));
@@ -158,6 +178,40 @@ const ProfileScreen = () => {
                     </View>
                 )}
 
+                {user.role === 'RIDER' && (
+                    <View className="bg-brand-50 p-4 rounded-xl mb-6 border border-brand-100">
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className="text-xl font-bold text-brand-900">Daily Financial Summary</Text>
+                            <TouchableOpacity onPress={fetchFinancials} disabled={loadingFin}>
+                                <Ionicons name="refresh" size={20} color="#0369a1" />
+                            </TouchableOpacity>
+                        </View>
+                        
+                        {loadingFin ? (
+                            <ActivityIndicator color="#0369a1" />
+                        ) : financials ? (
+                            <View className="space-y-3">
+                                <View className="flex-row justify-between items-center py-2 border-b border-brand-100">
+                                    <Text className="text-gray-600">Cash to Remit (COD)</Text>
+                                    <Text className="text-lg font-bold text-red-600">₦{financials.cashToRemit?.toLocaleString()}</Text>
+                                </View>
+                                <View className="flex-row justify-between items-center py-2 border-b border-brand-100">
+                                    <Text className="text-gray-600">Company Owes You</Text>
+                                    <Text className="text-lg font-bold text-green-600">₦{financials.companyOwesRider?.toLocaleString()}</Text>
+                                </View>
+                                <View className="flex-row justify-between items-center pt-2">
+                                    <Text className="font-bold text-brand-900">Net Daily Balance</Text>
+                                    <Text className={`text-xl font-black ${financials.netBalance < 0 ? 'text-red-700' : 'text-green-700'}`}>
+                                        {financials.netBalance < 0 ? '-' : ''}₦{Math.abs(financials.netBalance)?.toLocaleString()}
+                                    </Text>
+                                </View>
+                                <Text className="text-[10px] text-brand-600 mt-2 italic">* Balance of unsettled deliveries for today.</Text>
+                            </View>
+                        ) : (
+                            <Text className="text-gray-500 text-center">No financial data available today.</Text>
+                        )}
+                    </View>
+                )}
 
                 <TouchableOpacity
                     className="w-full bg-brand-50 border border-brand-200 p-4 rounded-xl items-center mt-6 flex-row justify-center"

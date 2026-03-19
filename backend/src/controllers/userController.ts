@@ -359,9 +359,13 @@ export const declineRider = async (req: Request, res: Response) => {
 
 export const getRiderAnalytics = async (req: Request, res: Response) => {
     try {
-        if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
-
+        const requestingUser = (req as any).user;
         const riderId = parseInt(req.params.id as string);
+
+        // Allow Admin to see any rider, but Rider can only see themselves
+        if (requestingUser.role !== 'ADMIN' && requestingUser.id !== riderId) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
 
         const deliveries = await prisma.delivery.findMany({
             where: {
@@ -391,6 +395,10 @@ export const getRiderAnalytics = async (req: Request, res: Response) => {
             POS: 0
         };
 
+        // For Daily Summary (Unsettled)
+        let dailyCODToRemit = 0;
+        let dailyCompanyOwesRider = 0;
+
         deliveries.forEach(d => {
             const date = new Date(d.updatedAt);
             if (date >= startOfDay) dailyCount++;
@@ -398,23 +406,28 @@ export const getRiderAnalytics = async (req: Request, res: Response) => {
             if (date >= startOfMonth) monthlyCount++;
 
             const totalPrice = d.price ? Number(d.price) : 0;
-            // Base Price = Total Price - 100 (Service Fee)
-            // If price is less than 100, assume it's just the base (for legacy data)
             const basePrice = totalPrice > 100 ? totalPrice - 100 : totalPrice;
             
             totalRevenue += totalPrice;
             revenueByMethod[d.paymentMethod] += totalPrice;
             
-            // Rider earning per delivery: (Base * 0.70) - 100
             const riderEarning = (basePrice * 0.70) - (totalPrice > 100 ? 100 : 0);
             totalRiderCommission += riderEarning;
+
+            // Settlement logic for "Expectation"
+            if (!d.isSettled) {
+                if (d.paymentMethod === 'COD') {
+                    // Rider holds the full cash, owes company (Base * 0.30) + 200
+                    // But effectively they have "Cash to Remit" = TotalPrice - RiderEarning
+                    dailyCODToRemit += (totalPrice - riderEarning);
+                } else {
+                    // Company holds the money, owes rider their earning
+                    dailyCompanyOwesRider += riderEarning;
+                }
+            }
         });
 
-        // Calculate 70% rider cut (old logic was simple 70%)
         const riderCommission = totalRiderCommission;
-
-        // Calculate COD Remittance: How much cash the rider holds vs how much they actually earned
-        // Positive number = Rider owes Company. Negative number = Company owes Rider.
         const codRemittance = revenueByMethod.COD - riderCommission;
 
         res.json({
@@ -429,6 +442,11 @@ export const getRiderAnalytics = async (req: Request, res: Response) => {
                 byMethod: revenueByMethod,
                 riderCommission: riderCommission,
                 codRemittance: codRemittance
+            },
+            summary: {
+                cashToRemit: dailyCODToRemit,
+                companyOwesRider: dailyCompanyOwesRider,
+                netBalance: dailyCompanyOwesRider - dailyCODToRemit
             }
         });
     } catch (error: any) {
@@ -441,17 +459,21 @@ export const getReconciliationReport = async (req: Request, res: Response) => {
     try {
         if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
 
-        // Retrieve all Riders
         const riders = await prisma.user.findMany({
             where: { role: Role.RIDER, isVerified: true },
             select: { id: true, name: true, phone: true }
         });
 
-        // Compute total financial state for every rider
-        const reports = await Promise.all(riders.map(async (rider) => {
+        const rawReports = await Promise.all(riders.map(async (rider) => {
             const deliveries = await prisma.delivery.findMany({
-                where: { riderId: rider.id, status: 'DELIVERED' }
+                where: { 
+                    riderId: rider.id, 
+                    status: 'DELIVERED',
+                    isSettled: false // Only unsettled deliveries for clearance
+                }
             });
+
+            if (deliveries.length === 0) return null;
 
             let totalDeliveries = deliveries.length;
             let totalRevenue = 0;
@@ -478,6 +500,9 @@ export const getReconciliationReport = async (req: Request, res: Response) => {
             const companyRevenue = totalCompanyRevenue;
             const codRemittance = totalCOD - riderCommission;
 
+            // If rider doesn't owe anything and wasn't owed anything (unlikely if deliveries > 0), skip
+            if (totalCOD === 0 && totalDeliveries > 0 && riderCommission === 0) return null;
+
             return {
                 id: rider.id,
                 name: rider.name,
@@ -495,9 +520,37 @@ export const getReconciliationReport = async (req: Request, res: Response) => {
             };
         }));
 
+        // Filter out nulls and riders with 0 COD if that's the primary goal
+        const reports = rawReports.filter(r => r !== null && r.financials.totalCOD > 0);
+
         res.json(reports);
     } catch (error: any) {
         console.error('Error fetching reconciliation report', error);
         res.status(500).json({ message: 'Failed to fetch reconciliation report', error: error.message });
+    }
+};
+
+export const settleRiderCOD = async (req: Request, res: Response) => {
+    try {
+        if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
+
+        const riderId = parseInt(req.params.id as string);
+
+        const result = await prisma.delivery.updateMany({
+            where: {
+                riderId: riderId,
+                status: 'DELIVERED',
+                paymentMethod: 'COD',
+                isSettled: false
+            },
+            data: {
+                isSettled: true
+            }
+        });
+
+        res.json({ message: `Successfully settled ${result.count} deliveries for rider.`, count: result.count });
+    } catch (error: any) {
+        console.error('Error settling rider COD:', error);
+        res.status(500).json({ message: 'Failed to settle rider COD' });
     }
 };

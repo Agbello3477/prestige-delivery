@@ -170,3 +170,15 @@ export const liftSuspension = async (riderId: number) => {
         throw error;
     }
 };
+export const clearCOD = async (riderId: number) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/${riderId}/clear-cod`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error(`Error clearing COD for rider ${riderId}`, error);
+        throw error;
+    }
+};

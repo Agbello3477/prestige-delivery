@@ -1,5 +1,5 @@
 import express from 'express';
-import { updateLocation, getOnlineRiders, getAllRiders, getAllCustomers, approveRider, assignBike, notifyNoBike, declineRider, getRiderAnalytics, getReconciliationReport, suspendUser, blockUser, liftSuspension } from '../controllers/userController';
+import { updateLocation, getOnlineRiders, getAllRiders, getAllCustomers, approveRider, assignBike, notifyNoBike, declineRider, getRiderAnalytics, getReconciliationReport, settleRiderCOD, suspendUser, blockUser, liftSuspension } from '../controllers/userController';
 import { authenticate } from '../middleware/authMiddleware';
 
 const router = express.Router();
@@ -18,6 +18,9 @@ router.get('/customers', authenticate, getAllCustomers);
 
 // Get global COD reconciliation report (Admin)
 router.get('/riders/reconciliation', authenticate, getReconciliationReport);
+
+// Clear Rider COD (Admin)
+router.post('/riders/:id/clear-cod', authenticate, settleRiderCOD);
 
 // Approve a rider (Admin)
 router.patch('/riders/:id/approve', authenticate, approveRider);
