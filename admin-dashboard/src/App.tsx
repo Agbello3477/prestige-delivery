@@ -13,6 +13,7 @@ import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import ReconciliationPage from './pages/ReconciliationPage';
 import ActivityLogPage from './pages/ActivityLogPage';
+import CustomersPage from './pages/CustomersPage';
 import DashboardLayout from './layout/DashboardLayout';
 import PartnerDashboardLayout from './layout/PartnerDashboardLayout';
 import PartnerDashboardOverview from './pages/partner/PartnerDashboardOverview';
@@ -65,6 +66,13 @@ function App() {
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <DashboardLayout>
                   <RidersPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/customers" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout>
+                  <CustomersPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

@@ -86,6 +86,35 @@ export const getAllRiders = async (req: Request, res: Response) => {
     }
 };
 
+export const getAllCustomers = async (req: Request, res: Response) => {
+    try {
+        if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
+
+        const customers = await prisma.user.findMany({
+            where: { role: Role.CUSTOMER },
+            orderBy: { id: 'desc' },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                createdAt: true,
+                isSuspended: true,
+                isBlocked: true,
+                suspensionEndDate: true,
+                _count: {
+                    select: { deliveriesAsCustomer: true }
+                }
+            }
+        });
+
+        res.json(customers);
+    } catch (error: any) {
+        console.error('Error fetching all customers', error);
+        res.status(500).json({ message: 'Failed to fetch customers' });
+    }
+};
+
 export const approveRider = async (req: Request, res: Response) => {
     try {
         if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
@@ -186,11 +215,11 @@ export const notifyNoBike = async (req: Request, res: Response) => {
     }
 };
 
-export const suspendRider = async (req: Request, res: Response) => {
+export const suspendUser = async (req: Request, res: Response) => {
     try {
         if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
 
-        const riderId = parseInt(req.params.id as string);
+        const targetUserId = parseInt(req.params.id as string);
         const { duration, unit } = req.body; // duration: number, unit: 'days' | 'weeks' | 'months'
 
         if (!duration || !unit) {
@@ -203,7 +232,7 @@ export const suspendRider = async (req: Request, res: Response) => {
         else if (unit === 'months') endDate.setMonth(endDate.getMonth() + duration);
 
         const updatedUser = await prisma.user.update({
-            where: { id: riderId },
+            where: { id: targetUserId },
             data: {
                 isSuspended: true,
                 suspensionEndDate: endDate,
@@ -211,7 +240,7 @@ export const suspendRider = async (req: Request, res: Response) => {
             }
         });
 
-        io.to(riderId.toString()).emit('system_notification', {
+        io.to(targetUserId.toString()).emit('system_notification', {
             title: 'Account Suspended',
             message: `You are suspended for at the moment please check back in ${duration} ${unit} or contact admin for more Information.`,
             type: 'WARNING'
@@ -224,21 +253,21 @@ export const suspendRider = async (req: Request, res: Response) => {
     }
 };
 
-export const blockRider = async (req: Request, res: Response) => {
+export const blockUser = async (req: Request, res: Response) => {
     try {
         if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
 
-        const riderId = parseInt(req.params.id as string);
+        const targetUserId = parseInt(req.params.id as string);
 
         const updatedUser = await prisma.user.update({
-            where: { id: riderId },
+            where: { id: targetUserId },
             data: {
                 isBlocked: true,
                 isOnline: false // Force offline
             }
         });
 
-        io.to(riderId.toString()).emit('system_notification', {
+        io.to(targetUserId.toString()).emit('system_notification', {
             title: 'Account Blocked',
             message: `You are currently blocked and will not receive any requests. Please contact admin for more information.`,
             type: 'ERROR'
@@ -255,10 +284,10 @@ export const liftSuspension = async (req: Request, res: Response) => {
     try {
         if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
 
-        const riderId = parseInt(req.params.id as string);
+        const targetUserId = parseInt(req.params.id as string);
 
         const updatedUser = await prisma.user.update({
-            where: { id: riderId },
+            where: { id: targetUserId },
             data: {
                 isSuspended: false,
                 suspensionEndDate: null,
@@ -266,7 +295,7 @@ export const liftSuspension = async (req: Request, res: Response) => {
             }
         });
 
-        io.to(riderId.toString()).emit('system_notification', {
+        io.to(targetUserId.toString()).emit('system_notification', {
             title: 'Suspension Lifted',
             message: 'Your account status has been restored. You can now go online.',
             type: 'INFO'
@@ -355,6 +384,7 @@ export const getRiderAnalytics = async (req: Request, res: Response) => {
         let monthlyCount = 0;
 
         let totalRevenue = 0;
+        let totalRiderCommission = 0;
         const revenueByMethod = {
             COD: 0,
             TRANSFER: 0,
@@ -367,13 +397,21 @@ export const getRiderAnalytics = async (req: Request, res: Response) => {
             if (date >= startOfWeek) weeklyCount++;
             if (date >= startOfMonth) monthlyCount++;
 
-            const price = d.price ? Number(d.price) : 0;
-            totalRevenue += price;
-            revenueByMethod[d.paymentMethod] += price;
+            const totalPrice = d.price ? Number(d.price) : 0;
+            // Base Price = Total Price - 100 (Service Fee)
+            // If price is less than 100, assume it's just the base (for legacy data)
+            const basePrice = totalPrice > 100 ? totalPrice - 100 : totalPrice;
+            
+            totalRevenue += totalPrice;
+            revenueByMethod[d.paymentMethod] += totalPrice;
+            
+            // Rider earning per delivery: (Base * 0.70) - 100
+            const riderEarning = (basePrice * 0.70) - (totalPrice > 100 ? 100 : 0);
+            totalRiderCommission += riderEarning;
         });
 
-        // Calculate 70% rider cut
-        const riderCommission = totalRevenue * 0.70;
+        // Calculate 70% rider cut (old logic was simple 70%)
+        const riderCommission = totalRiderCommission;
 
         // Calculate COD Remittance: How much cash the rider holds vs how much they actually earned
         // Positive number = Rider owes Company. Negative number = Company owes Rider.
@@ -417,20 +455,27 @@ export const getReconciliationReport = async (req: Request, res: Response) => {
 
             let totalDeliveries = deliveries.length;
             let totalRevenue = 0;
+            let totalRiderCommission = 0;
+            let totalCompanyRevenue = 0;
             let totalCOD = 0;
             let totalTransfer = 0;
             let totalPOS = 0;
 
             deliveries.forEach(d => {
-                const price = d.price ? Number(d.price) : 0;
-                totalRevenue += price;
-                if (d.paymentMethod === 'COD') totalCOD += price;
-                if (d.paymentMethod === 'TRANSFER') totalTransfer += price;
-                if (d.paymentMethod === 'POS') totalPOS += price;
+                const totalPrice = d.price ? Number(d.price) : 0;
+                totalRevenue += totalPrice;
+                if (d.paymentMethod === 'COD') totalCOD += totalPrice;
+                if (d.paymentMethod === 'TRANSFER') totalTransfer += totalPrice;
+                if (d.paymentMethod === 'POS') totalPOS += totalPrice;
+
+                const basePrice = totalPrice > 100 ? totalPrice - 100 : totalPrice;
+                const riderEarning = (basePrice * 0.70) - (totalPrice > 100 ? 100 : 0);
+                totalRiderCommission += riderEarning;
+                totalCompanyRevenue += (basePrice * 0.30) + (totalPrice > 100 ? 200 : 0);
             });
 
-            const riderCommission = totalRevenue * 0.70;
-            const companyRevenue = totalRevenue * 0.30;
+            const riderCommission = totalRiderCommission;
+            const companyRevenue = totalCompanyRevenue;
             const codRemittance = totalCOD - riderCommission;
 
             return {

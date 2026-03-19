@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { findNearbyRiders } from '../services/matchingService';
 import { isWithinKano } from '../utils/geo';
 import { sendPushNotification } from '../services/notificationService';
+import { io } from '../socket';
 
 const createDeliverySchema = z.object({
     pickupAddress: z.string(),
@@ -324,26 +325,62 @@ export const rateDelivery = async (req: any, res: Response) => {
 export const cancelDelivery = async (req: any, res: Response) => {
     try {
         const { id } = req.params;
-        const customerId = req.user.id;
+        const { reason } = req.body;
+        const requestingUser = req.user;
 
-        const delivery = await prisma.delivery.findUnique({ where: { id } });
+        const delivery = await prisma.delivery.findUnique({ 
+            where: { id },
+            include: { customer: true, rider: true }
+        });
 
         if (!delivery) {
             return res.status(404).json({ message: 'Delivery not found' });
         }
 
-        if (delivery.customerId !== customerId) {
-            return res.status(403).json({ message: 'Only the customer can cancel this delivery' });
+        const isAdmin = requestingUser.role === 'ADMIN';
+        const isOwner = delivery.customerId === requestingUser.id;
+
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ message: 'Not authorized to cancel this delivery' });
         }
 
-        if (delivery.status !== 'PENDING') {
-            return res.status(400).json({ message: 'Can only logistically cancel pending deliveries' });
+        // Logical safety checks
+        if (delivery.status === 'DELIVERED' || delivery.status === 'CANCELLED') {
+            return res.status(400).json({ message: `Cannot cancel a delivery that is already ${delivery.status}` });
+        }
+
+        // If not admin, only PENDING can be cancelled
+        if (!isAdmin && delivery.status !== 'PENDING') {
+            return res.status(400).json({ message: 'Can only cancel pending deliveries' });
+        }
+
+        if (isAdmin && !reason) {
+            return res.status(400).json({ message: 'Admin must provide a reason for cancellation' });
         }
 
         const updatedDelivery = await prisma.delivery.update({
             where: { id },
             data: { status: 'CANCELLED' }
         });
+
+        // Notify parties
+        const notificationMessage = isAdmin 
+            ? `Admin cancelled this request. Reason: ${reason}` 
+            : `Customer cancelled the request.`;
+
+        io.to(delivery.customerId.toString()).emit('delivery_updated', {
+            id: delivery.id,
+            status: 'CANCELLED',
+            message: notificationMessage
+        });
+
+        if (delivery.riderId) {
+            io.to(delivery.riderId.toString()).emit('delivery_updated', {
+                id: delivery.id,
+                status: 'CANCELLED',
+                message: notificationMessage
+            });
+        }
 
         res.json({ message: 'Delivery cancelled successfully', delivery: updatedDelivery });
     } catch (error: any) {

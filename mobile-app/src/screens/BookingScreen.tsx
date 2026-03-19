@@ -353,10 +353,20 @@ const BookingScreen = ({ navigation }: any) => {
                         ) : (
                             <ScrollView className="flex-1">
                                 {/* Confirmation View */}
-                                <View className="bg-brand-50 p-6 rounded-2xl items-center mb-8 border border-brand-100">
-                                    <Text className="text-gray-500 mb-1">Estimated Cost</Text>
-                                    <Text className="text-4xl font-bold text-brand-900">₦{String(estimate?.price || 0)}</Text>
-                                    <View className="flex-row space-x-4 mt-4">
+                                <View className="bg-brand-50 p-6 rounded-2xl w-full mb-8 border border-brand-100">
+                                    <View className="flex-row justify-between items-center mb-2">
+                                        <Text className="text-gray-600">Base Delivery Fee</Text>
+                                        <Text className="text-gray-900 font-bold">₦{String((estimate as any)?.base || (estimate?.price || 0) - 100)}</Text>
+                                    </View>
+                                    <View className="flex-row justify-between items-center mb-4 pb-2 border-b border-brand-200">
+                                        <Text className="text-gray-600">Service Fee</Text>
+                                        <Text className="text-gray-900 font-bold">₦{String((estimate as any)?.serviceFee || 100)}</Text>
+                                    </View>
+                                    <View className="flex-row justify-between items-center">
+                                        <Text className="text-brand-900 font-bold text-lg">Total Amount</Text>
+                                        <Text className="text-3xl font-bold text-brand-900">₦{String(estimate?.price || 0)}</Text>
+                                    </View>
+                                    <View className="flex-row justify-center space-x-4 mt-6">
                                         <Text className="text-gray-600 font-medium">{String(estimate?.distance || '')}</Text>
                                         <Text className="text-gray-300">•</Text>
                                         <Text className="text-gray-600 font-medium">{String(estimate?.duration || '')}</Text>

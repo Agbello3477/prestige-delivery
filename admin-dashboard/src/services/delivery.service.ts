@@ -33,3 +33,15 @@ export const getDeliveries = async () => {
         throw error;
     }
 };
+export const cancelDelivery = async (deliveryId: string, reason: string) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/${deliveryId}/cancel`, { reason }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error(`Error cancelling delivery ${deliveryId}:`, error);
+        throw error;
+    }
+};

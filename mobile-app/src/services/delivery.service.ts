@@ -23,12 +23,19 @@ export const deliveryService = {
         if (data.vehicleType === 'CAR') basePrice = 1300;
         if (data.vehicleType === 'VAN') basePrice = 1400;
 
-        // Add slight random fluctuation but strictly clip to boundaries
-        let calculatedPrice = basePrice + Math.floor(Math.random() * 200);
-        calculatedPrice = Math.max(1200, Math.min(1500, calculatedPrice)); // Clamp between 1200 and 1500
+        // Add slight random fluctuation
+        let rawPrice = basePrice + Math.floor(Math.random() * 200);
+        
+        // Round up to nearest 50: (e.g., 10-40 -> 50, 60-90 -> 100)
+        const roundedBase = Math.ceil(rawPrice / 50) * 50;
+
+        const serviceFee = 100;
+        const total = roundedBase + serviceFee;
 
         return {
-            price: calculatedPrice,
+            base: roundedBase,
+            serviceFee: serviceFee,
+            price: total, // For compatibility with existing UI
             distance: '5.2 km', // Mock distance
             duration: '15 mins' // Mock duration
         };
