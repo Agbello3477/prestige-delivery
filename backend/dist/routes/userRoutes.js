@@ -13,8 +13,12 @@ router.patch('/location', authMiddleware_1.authenticate, userController_1.update
 router.get('/riders/online', authMiddleware_1.authenticate, userController_1.getOnlineRiders);
 // Get all registered riders (Admin)
 router.get('/riders', authMiddleware_1.authenticate, userController_1.getAllRiders);
+// Get all registered customers (Admin)
+router.get('/customers', authMiddleware_1.authenticate, userController_1.getAllCustomers);
 // Get global COD reconciliation report (Admin)
 router.get('/riders/reconciliation', authMiddleware_1.authenticate, userController_1.getReconciliationReport);
+// Clear Rider COD (Admin)
+router.post('/riders/:id/clear-cod', authMiddleware_1.authenticate, userController_1.settleRiderCOD);
 // Approve a rider (Admin)
 router.patch('/riders/:id/approve', authMiddleware_1.authenticate, userController_1.approveRider);
 // Decline a rider (Admin)
@@ -25,10 +29,14 @@ router.post('/riders/:id/assign-bike', authMiddleware_1.authenticate, userContro
 router.post('/riders/:id/notify-no-bike', authMiddleware_1.authenticate, userController_1.notifyNoBike);
 // Get Rider Analytics (Admin)
 router.get('/riders/:id/analytics', authMiddleware_1.authenticate, userController_1.getRiderAnalytics);
-// Suspend a rider (Admin)
-router.post('/riders/:id/suspend', authMiddleware_1.authenticate, userController_1.suspendRider);
-// Block a rider (Admin)
-router.post('/riders/:id/block', authMiddleware_1.authenticate, userController_1.blockRider);
-// Lift Rider Suspension/Block (Admin)
-router.post('/riders/:id/lift-suspension', authMiddleware_1.authenticate, userController_1.liftSuspension);
+// Suspend a user (Admin)
+router.post('/riders/:id/suspend', authMiddleware_1.authenticate, userController_1.suspendUser);
+// Block a user (Admin)
+router.post('/riders/:id/block', authMiddleware_1.authenticate, userController_1.blockUser);
+// Lift User Suspension/Block (Admin)
+router.post('/:id/lift-suspension', authMiddleware_1.authenticate, userController_1.liftSuspension);
+// Customer specific routes (Admin)
+router.post('/customers/:id/suspend', authMiddleware_1.authenticate, userController_1.suspendUser);
+router.post('/customers/:id/block', authMiddleware_1.authenticate, userController_1.blockUser);
+router.post('/customers/:id/lift-suspension', authMiddleware_1.authenticate, userController_1.liftSuspension);
 exports.default = router;

@@ -347,7 +347,7 @@ export const getMyMenuItems = async (req: Request, res: Response) => {
 export const createVendorOrder = async (req: Request, res: Response) => {
     try {
         const customerId = (req as any).user.id;
-        const { partnerId, items, prescriptionUrl, totalAmount, deliveryOption, deliveryAddress, deliveryFee } = req.body;
+        const { partnerId, items, prescriptionUrl, totalAmount, deliveryOption, deliveryAddress, deliveryFee, deliveryNote } = req.body;
 
         const order = await prisma.vendorOrder.create({
             data: {
@@ -358,7 +358,8 @@ export const createVendorOrder = async (req: Request, res: Response) => {
                 totalAmount: totalAmount.toString(),
                 deliveryOption: deliveryOption || 'PICKUP',
                 deliveryAddress: deliveryAddress || null,
-                deliveryFee: deliveryFee ? deliveryFee.toString() : null
+                deliveryFee: deliveryFee ? deliveryFee.toString() : null,
+                deliveryNote: deliveryNote || null
             },
             include: { partner: true }
         });
@@ -373,7 +374,8 @@ export const createVendorOrder = async (req: Request, res: Response) => {
                     dropoffAddress: deliveryAddress || 'Customer Location',
                     customerId,
                     status: DeliveryStatus.PENDING,
-                    price: deliveryFee || 1200
+                    price: deliveryFee || 1200,
+                    deliveryNote: deliveryNote || null
                 }
             });
 

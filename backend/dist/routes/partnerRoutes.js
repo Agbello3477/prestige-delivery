@@ -10,8 +10,10 @@ const router = express_1.default.Router();
 // Only Admins can manage partners
 router.post('/', authMiddleware_1.authenticate, (0, authMiddleware_1.authorize)(['ADMIN']), partnerController_1.createPartner);
 router.get('/', authMiddleware_1.authenticate, (0, authMiddleware_1.authorize)(['ADMIN']), partnerController_1.getPartners);
+router.get('/archived', authMiddleware_1.authenticate, (0, authMiddleware_1.authorize)(['ADMIN']), partnerController_1.getArchivedPartners);
 router.put('/:id', authMiddleware_1.authenticate, (0, authMiddleware_1.authorize)(['ADMIN']), partnerController_1.updatePartner);
 router.delete('/:id', authMiddleware_1.authenticate, (0, authMiddleware_1.authorize)(['ADMIN']), partnerController_1.deletePartner);
+router.post('/:id/restore', authMiddleware_1.authenticate, (0, authMiddleware_1.authorize)(['ADMIN']), partnerController_1.restorePartner);
 // Public Partners (for Customers to browse)
 router.get('/public', authMiddleware_1.authenticate, (0, authMiddleware_1.authorize)(['CUSTOMER', 'ADMIN']), partnerController_1.getPublicPartners);
 // Menu Items

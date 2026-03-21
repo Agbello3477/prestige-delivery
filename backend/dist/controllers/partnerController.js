@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateVendorOrderStatus = exports.getVendorOrders = exports.createVendorOrder = exports.getMyMenuItems = exports.getMenuItems = exports.addMenuItem = exports.getPublicPartners = exports.deletePartner = exports.updatePartner = exports.getPartners = exports.createPartner = void 0;
+exports.updateVendorOrderStatus = exports.getVendorOrders = exports.createVendorOrder = exports.getMyMenuItems = exports.getMenuItems = exports.addMenuItem = exports.getPublicPartners = exports.restorePartner = exports.deletePartner = exports.updatePartner = exports.getArchivedPartners = exports.getPartners = exports.createPartner = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
 const auth_1 = require("../utils/auth");
@@ -54,6 +54,14 @@ const createPartner = async (req, res) => {
         res.status(201).json({ message: 'Partner created successfully', user });
     }
     catch (error) {
+        if (error instanceof zod_1.z.ZodError) {
+            console.error('[VALIDATION ERROR] createPartner:', error.issues);
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: error.issues.map((issue) => ({ path: issue.path, message: issue.message }))
+            });
+        }
+        console.error('[ERROR] createPartner:', error);
         res.status(400).json({ message: 'Failed to create partner', error: error.message });
     }
 };
@@ -61,7 +69,7 @@ exports.createPartner = createPartner;
 const getPartners = async (req, res) => {
     try {
         const partners = await prisma_1.default.user.findMany({
-            where: { role: client_1.Role.PARTNER },
+            where: { role: client_1.Role.PARTNER, isArchived: false },
             select: {
                 id: true,
                 name: true,
@@ -80,6 +88,28 @@ const getPartners = async (req, res) => {
     }
 };
 exports.getPartners = getPartners;
+const getArchivedPartners = async (req, res) => {
+    try {
+        const partners = await prisma_1.default.user.findMany({
+            where: { role: client_1.Role.PARTNER, isArchived: true },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                createdAt: true,
+                isVerified: true,
+                partnerProfile: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(partners);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Error fetching archived partners', error: error.message });
+    }
+};
+exports.getArchivedPartners = getArchivedPartners;
 const updatePartner = async (req, res) => {
     try {
         const { id } = req.params;
@@ -130,61 +160,67 @@ const deletePartner = async (req, res) => {
         const partner = await prisma_1.default.user.findUnique({
             where: { id: userId },
             include: {
-                partnerProfile: true,
-                deliveriesAsRider: true,
-                deliveriesAsCustomer: true
+                partnerProfile: true
             }
         });
         if (!partner || partner.role !== client_1.Role.PARTNER) {
             return res.status(404).json({ message: 'Partner not found' });
         }
-        const profileId = partner.partnerProfile?.id;
-        // 1. Handle Audit Logs (Unlink but preserve history)
-        await prisma_1.default.auditLog.updateMany({
-            where: { userId },
-            data: { userId: null }
-        });
-        // 2. Handle Messages (Delete conversations)
-        await prisma_1.default.message.deleteMany({
-            where: {
-                OR: [
-                    { senderId: userId },
-                    { receiverId: userId }
-                ]
+        // Soft Delete: Mark as archived and deactivate profile
+        await prisma_1.default.user.update({
+            where: { id: userId },
+            data: {
+                isArchived: true,
+                partnerProfile: partner.partnerProfile ? {
+                    update: { isActive: false }
+                } : undefined
             }
         });
-        // 3. Handle Deliveries (Unlink from user records)
-        if (partner.deliveriesAsCustomer.length > 0) {
-            await prisma_1.default.delivery.deleteMany({ where: { customerId: userId } });
+        // 1. Optionally logout by invalidating sessions/setting isOnline false (If applicable)
+        if (partner.isOnline) {
+            await prisma_1.default.user.update({ where: { id: userId }, data: { isOnline: false, pushToken: null } });
         }
-        if (partner.deliveriesAsRider.length > 0) {
-            // Should not happen for partners usually, but safe-guard
-            await prisma_1.default.delivery.updateMany({
-                where: { riderId: userId },
-                data: { riderId: null }
-            });
-        }
-        // 4. Handle Partner Profile specific records
-        if (profileId) {
-            await prisma_1.default.menuItem.deleteMany({ where: { partnerId: profileId } });
-            await prisma_1.default.vendorOrder.deleteMany({ where: { partnerId: profileId } });
-            await prisma_1.default.vehicle.updateMany({
-                where: { partnerId: profileId },
-                data: { partnerId: null }
-            });
-            await prisma_1.default.partnerProfile.delete({ where: { id: profileId } });
-        }
-        // 5. Finally delete the User
-        await prisma_1.default.user.delete({ where: { id: userId } });
-        await (0, auditService_1.logActivity)(adminId, 'PARTNER_DELETED', { partnerId: id, partnerName: partner.name }, req.ip || '');
-        res.json({ message: 'Partner and all associated records deleted successfully' });
+        await (0, auditService_1.logActivity)(adminId, 'PARTNER_ARCHIVED', { partnerId: id, partnerName: partner.name }, req.ip || '');
+        res.json({ message: 'Partner archived successfully. Financial records are preserved.' });
     }
     catch (error) {
-        console.error('Delete partner error:', error);
-        res.status(500).json({ message: 'Failed to delete partner', error: error.message });
+        console.error('Archive partner error:', error);
+        res.status(500).json({ message: 'Failed to archive partner', error: error.message });
     }
 };
 exports.deletePartner = deletePartner;
+const restorePartner = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const adminId = req.user.id;
+        const userId = parseInt(String(id));
+        const partner = await prisma_1.default.user.findUnique({
+            where: { id: userId },
+            include: {
+                partnerProfile: true
+            }
+        });
+        if (!partner || partner.role !== client_1.Role.PARTNER) {
+            return res.status(404).json({ message: 'Partner not found' });
+        }
+        await prisma_1.default.user.update({
+            where: { id: userId },
+            data: {
+                isArchived: false,
+                partnerProfile: partner.partnerProfile ? {
+                    update: { isActive: true }
+                } : undefined
+            }
+        });
+        await (0, auditService_1.logActivity)(adminId, 'PARTNER_RESTORED', { partnerId: id, partnerName: partner.name }, req.ip || '');
+        res.json({ message: 'Partner restored successfully.' });
+    }
+    catch (error) {
+        console.error('Restore partner error:', error);
+        res.status(500).json({ message: 'Failed to restore partner', error: error.message });
+    }
+};
+exports.restorePartner = restorePartner;
 const getPublicPartners = async (req, res) => {
     try {
         const type = req.query.type;
@@ -290,7 +326,7 @@ exports.getMyMenuItems = getMyMenuItems;
 const createVendorOrder = async (req, res) => {
     try {
         const customerId = req.user.id;
-        const { partnerId, items, prescriptionUrl, totalAmount, deliveryOption, deliveryAddress, deliveryFee } = req.body;
+        const { partnerId, items, prescriptionUrl, totalAmount, deliveryOption, deliveryAddress, deliveryFee, deliveryNote } = req.body;
         const order = await prisma_1.default.vendorOrder.create({
             data: {
                 partnerId: parseInt(partnerId),
@@ -300,7 +336,8 @@ const createVendorOrder = async (req, res) => {
                 totalAmount: totalAmount.toString(),
                 deliveryOption: deliveryOption || 'PICKUP',
                 deliveryAddress: deliveryAddress || null,
-                deliveryFee: deliveryFee ? deliveryFee.toString() : null
+                deliveryFee: deliveryFee ? deliveryFee.toString() : null,
+                deliveryNote: deliveryNote || null
             },
             include: { partner: true }
         });
@@ -313,7 +350,8 @@ const createVendorOrder = async (req, res) => {
                     dropoffAddress: deliveryAddress || 'Customer Location',
                     customerId,
                     status: client_1.DeliveryStatus.PENDING,
-                    price: deliveryFee || 1200
+                    price: deliveryFee || 1200,
+                    deliveryNote: deliveryNote || null
                 }
             });
             await prisma_1.default.vendorOrder.update({

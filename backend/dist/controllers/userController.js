@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getReconciliationReport = exports.getRiderAnalytics = exports.declineRider = exports.liftSuspension = exports.blockRider = exports.suspendRider = exports.notifyNoBike = exports.assignBike = exports.approveRider = exports.getAllRiders = exports.getOnlineRiders = exports.updateLocation = void 0;
+exports.settleRiderCOD = exports.getReconciliationReport = exports.getRiderAnalytics = exports.declineRider = exports.liftSuspension = exports.blockUser = exports.suspendUser = exports.notifyNoBike = exports.assignBike = exports.approveRider = exports.getAllCustomers = exports.getAllRiders = exports.getOnlineRiders = exports.updateLocation = void 0;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const client_1 = require("@prisma/client");
 const sms_1 = require("../utils/sms");
@@ -87,6 +87,35 @@ const getAllRiders = async (req, res) => {
     }
 };
 exports.getAllRiders = getAllRiders;
+const getAllCustomers = async (req, res) => {
+    try {
+        if (req.user.role !== 'ADMIN')
+            return res.status(403).json({ message: 'Forbidden' });
+        const customers = await prisma_1.default.user.findMany({
+            where: { role: client_1.Role.CUSTOMER },
+            orderBy: { id: 'desc' },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                createdAt: true,
+                isSuspended: true,
+                isBlocked: true,
+                suspensionEndDate: true,
+                _count: {
+                    select: { deliveriesAsCustomer: true }
+                }
+            }
+        });
+        res.json(customers);
+    }
+    catch (error) {
+        console.error('Error fetching all customers', error);
+        res.status(500).json({ message: 'Failed to fetch customers' });
+    }
+};
+exports.getAllCustomers = getAllCustomers;
 const approveRider = async (req, res) => {
     try {
         if (req.user.role !== 'ADMIN')
@@ -179,11 +208,11 @@ const notifyNoBike = async (req, res) => {
     }
 };
 exports.notifyNoBike = notifyNoBike;
-const suspendRider = async (req, res) => {
+const suspendUser = async (req, res) => {
     try {
         if (req.user.role !== 'ADMIN')
             return res.status(403).json({ message: 'Forbidden' });
-        const riderId = parseInt(req.params.id);
+        const targetUserId = parseInt(req.params.id);
         const { duration, unit } = req.body; // duration: number, unit: 'days' | 'weeks' | 'months'
         if (!duration || !unit) {
             return res.status(400).json({ message: 'Duration and unit are required' });
@@ -196,14 +225,14 @@ const suspendRider = async (req, res) => {
         else if (unit === 'months')
             endDate.setMonth(endDate.getMonth() + duration);
         const updatedUser = await prisma_1.default.user.update({
-            where: { id: riderId },
+            where: { id: targetUserId },
             data: {
                 isSuspended: true,
                 suspensionEndDate: endDate,
                 isOnline: false // Force offline
             }
         });
-        socket_1.io.to(riderId.toString()).emit('system_notification', {
+        socket_1.io.to(targetUserId.toString()).emit('system_notification', {
             title: 'Account Suspended',
             message: `You are suspended for at the moment please check back in ${duration} ${unit} or contact admin for more Information.`,
             type: 'WARNING'
@@ -215,20 +244,20 @@ const suspendRider = async (req, res) => {
         res.status(500).json({ message: 'Failed to suspend rider' });
     }
 };
-exports.suspendRider = suspendRider;
-const blockRider = async (req, res) => {
+exports.suspendUser = suspendUser;
+const blockUser = async (req, res) => {
     try {
         if (req.user.role !== 'ADMIN')
             return res.status(403).json({ message: 'Forbidden' });
-        const riderId = parseInt(req.params.id);
+        const targetUserId = parseInt(req.params.id);
         const updatedUser = await prisma_1.default.user.update({
-            where: { id: riderId },
+            where: { id: targetUserId },
             data: {
                 isBlocked: true,
                 isOnline: false // Force offline
             }
         });
-        socket_1.io.to(riderId.toString()).emit('system_notification', {
+        socket_1.io.to(targetUserId.toString()).emit('system_notification', {
             title: 'Account Blocked',
             message: `You are currently blocked and will not receive any requests. Please contact admin for more information.`,
             type: 'ERROR'
@@ -240,21 +269,21 @@ const blockRider = async (req, res) => {
         res.status(500).json({ message: 'Failed to block rider' });
     }
 };
-exports.blockRider = blockRider;
+exports.blockUser = blockUser;
 const liftSuspension = async (req, res) => {
     try {
         if (req.user.role !== 'ADMIN')
             return res.status(403).json({ message: 'Forbidden' });
-        const riderId = parseInt(req.params.id);
+        const targetUserId = parseInt(req.params.id);
         const updatedUser = await prisma_1.default.user.update({
-            where: { id: riderId },
+            where: { id: targetUserId },
             data: {
                 isSuspended: false,
                 suspensionEndDate: null,
                 isBlocked: false
             }
         });
-        socket_1.io.to(riderId.toString()).emit('system_notification', {
+        socket_1.io.to(targetUserId.toString()).emit('system_notification', {
             title: 'Suspension Lifted',
             message: 'Your account status has been restored. You can now go online.',
             type: 'INFO'
@@ -313,9 +342,12 @@ const declineRider = async (req, res) => {
 exports.declineRider = declineRider;
 const getRiderAnalytics = async (req, res) => {
     try {
-        if (req.user.role !== 'ADMIN')
-            return res.status(403).json({ message: 'Forbidden' });
+        const requestingUser = req.user;
         const riderId = parseInt(req.params.id);
+        // Allow Admin to see any rider, but Rider can only see themselves
+        if (requestingUser.role !== 'ADMIN' && requestingUser.id !== riderId) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
         const deliveries = await prisma_1.default.delivery.findMany({
             where: {
                 riderId: riderId,
@@ -332,11 +364,15 @@ const getRiderAnalytics = async (req, res) => {
         let weeklyCount = 0;
         let monthlyCount = 0;
         let totalRevenue = 0;
+        let totalRiderCommission = 0;
         const revenueByMethod = {
             COD: 0,
             TRANSFER: 0,
             POS: 0
         };
+        // For Daily Summary (Unsettled)
+        let dailyCODToRemit = 0;
+        let dailyCompanyOwesRider = 0;
         deliveries.forEach(d => {
             const date = new Date(d.updatedAt);
             if (date >= startOfDay)
@@ -345,14 +381,26 @@ const getRiderAnalytics = async (req, res) => {
                 weeklyCount++;
             if (date >= startOfMonth)
                 monthlyCount++;
-            const price = d.price ? Number(d.price) : 0;
-            totalRevenue += price;
-            revenueByMethod[d.paymentMethod] += price;
+            const totalPrice = d.price ? Number(d.price) : 0;
+            const basePrice = totalPrice > 100 ? totalPrice - 100 : totalPrice;
+            totalRevenue += totalPrice;
+            revenueByMethod[d.paymentMethod] += totalPrice;
+            const riderEarning = (basePrice * 0.70) - (totalPrice > 100 ? 100 : 0);
+            totalRiderCommission += riderEarning;
+            // Settlement logic for "Expectation"
+            if (!d.isSettled) {
+                if (d.paymentMethod === 'COD') {
+                    // Rider holds the full cash, owes company (Base * 0.30) + 200
+                    // But effectively they have "Cash to Remit" = TotalPrice - RiderEarning
+                    dailyCODToRemit += (totalPrice - riderEarning);
+                }
+                else {
+                    // Company holds the money, owes rider their earning
+                    dailyCompanyOwesRider += riderEarning;
+                }
+            }
         });
-        // Calculate 70% rider cut
-        const riderCommission = totalRevenue * 0.70;
-        // Calculate COD Remittance: How much cash the rider holds vs how much they actually earned
-        // Positive number = Rider owes Company. Negative number = Company owes Rider.
+        const riderCommission = totalRiderCommission;
         const codRemittance = revenueByMethod.COD - riderCommission;
         res.json({
             deliveries: {
@@ -366,6 +414,11 @@ const getRiderAnalytics = async (req, res) => {
                 byMethod: revenueByMethod,
                 riderCommission: riderCommission,
                 codRemittance: codRemittance
+            },
+            summary: {
+                cashToRemit: dailyCODToRemit,
+                companyOwesRider: dailyCompanyOwesRider,
+                netBalance: dailyCompanyOwesRider - dailyCODToRemit
             }
         });
     }
@@ -379,34 +432,47 @@ const getReconciliationReport = async (req, res) => {
     try {
         if (req.user.role !== 'ADMIN')
             return res.status(403).json({ message: 'Forbidden' });
-        // Retrieve all Riders
         const riders = await prisma_1.default.user.findMany({
             where: { role: client_1.Role.RIDER, isVerified: true },
             select: { id: true, name: true, phone: true }
         });
-        // Compute total financial state for every rider
-        const reports = await Promise.all(riders.map(async (rider) => {
+        const rawReports = await Promise.all(riders.map(async (rider) => {
             const deliveries = await prisma_1.default.delivery.findMany({
-                where: { riderId: rider.id, status: 'DELIVERED' }
+                where: {
+                    riderId: rider.id,
+                    status: 'DELIVERED',
+                    isSettled: false // Only unsettled deliveries for clearance
+                }
             });
+            if (deliveries.length === 0)
+                return null;
             let totalDeliveries = deliveries.length;
             let totalRevenue = 0;
+            let totalRiderCommission = 0;
+            let totalCompanyRevenue = 0;
             let totalCOD = 0;
             let totalTransfer = 0;
             let totalPOS = 0;
             deliveries.forEach(d => {
-                const price = d.price ? Number(d.price) : 0;
-                totalRevenue += price;
+                const totalPrice = d.price ? Number(d.price) : 0;
+                totalRevenue += totalPrice;
                 if (d.paymentMethod === 'COD')
-                    totalCOD += price;
+                    totalCOD += totalPrice;
                 if (d.paymentMethod === 'TRANSFER')
-                    totalTransfer += price;
+                    totalTransfer += totalPrice;
                 if (d.paymentMethod === 'POS')
-                    totalPOS += price;
+                    totalPOS += totalPrice;
+                const basePrice = totalPrice > 100 ? totalPrice - 100 : totalPrice;
+                const riderEarning = (basePrice * 0.70) - (totalPrice > 100 ? 100 : 0);
+                totalRiderCommission += riderEarning;
+                totalCompanyRevenue += (basePrice * 0.30) + (totalPrice > 100 ? 200 : 0);
             });
-            const riderCommission = totalRevenue * 0.70;
-            const companyRevenue = totalRevenue * 0.30;
+            const riderCommission = totalRiderCommission;
+            const companyRevenue = totalCompanyRevenue;
             const codRemittance = totalCOD - riderCommission;
+            // If rider doesn't owe anything and wasn't owed anything (unlikely if deliveries > 0), skip
+            if (totalCOD === 0 && totalDeliveries > 0 && riderCommission === 0)
+                return null;
             return {
                 id: rider.id,
                 name: rider.name,
@@ -423,6 +489,8 @@ const getReconciliationReport = async (req, res) => {
                 }
             };
         }));
+        // Filter out nulls and riders with 0 COD if that's the primary goal
+        const reports = rawReports.filter(r => r !== null && r.financials.totalCOD > 0);
         res.json(reports);
     }
     catch (error) {
@@ -431,3 +499,27 @@ const getReconciliationReport = async (req, res) => {
     }
 };
 exports.getReconciliationReport = getReconciliationReport;
+const settleRiderCOD = async (req, res) => {
+    try {
+        if (req.user.role !== 'ADMIN')
+            return res.status(403).json({ message: 'Forbidden' });
+        const riderId = parseInt(req.params.id);
+        const result = await prisma_1.default.delivery.updateMany({
+            where: {
+                riderId: riderId,
+                status: 'DELIVERED',
+                paymentMethod: 'COD',
+                isSettled: false
+            },
+            data: {
+                isSettled: true
+            }
+        });
+        res.json({ message: `Successfully settled ${result.count} deliveries for rider.`, count: result.count });
+    }
+    catch (error) {
+        console.error('Error settling rider COD:', error);
+        res.status(500).json({ message: 'Failed to settle rider COD' });
+    }
+};
+exports.settleRiderCOD = settleRiderCOD;

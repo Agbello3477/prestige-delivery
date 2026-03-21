@@ -11,7 +11,8 @@ const initSocket = (httpServer) => {
         cors: {
             origin: '*',
             methods: ['GET', 'POST']
-        }
+        },
+        transports: ['websocket', 'polling']
     });
     exports.io.on('connection', (socket) => {
         console.log('User connected:', socket.id);

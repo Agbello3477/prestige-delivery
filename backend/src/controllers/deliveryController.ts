@@ -17,12 +17,13 @@ const createDeliverySchema = z.object({
     vehicleType: z.string().optional(), // Allow vehicleType from frontend
     paymentMethod: z.enum(['COD', 'TRANSFER', 'POS']).optional().default('COD'),
     price: z.number().optional(),
-    distanceKm: z.number().optional()
+    distanceKm: z.number().optional(),
+    deliveryNote: z.string().optional()
 });
 
 export const createDelivery = async (req: any, res: Response) => {
     try {
-        const { pickupAddress, pickupLat, pickupLng, dropoffAddress, dropoffLat, dropoffLng, paymentMethod, price, distanceKm } = createDeliverySchema.parse(req.body);
+        const { pickupAddress, pickupLat, pickupLng, dropoffAddress, dropoffLat, dropoffLng, paymentMethod, price, distanceKm, deliveryNote } = createDeliverySchema.parse(req.body);
 
         // 1. Geofence Check (Kano State Logic)
         // Bypass geofence for testing - simulators often use default coordinates outside Kano
@@ -48,6 +49,7 @@ export const createDelivery = async (req: any, res: Response) => {
                 dropoffLng,
                 price,
                 distanceKm,
+                deliveryNote,
                 status: DeliveryStatus.PENDING,
                 paymentMethod: paymentMethod as any,
             },

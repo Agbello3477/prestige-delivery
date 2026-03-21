@@ -8,6 +8,7 @@ const client_1 = require("@prisma/client");
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const zod_1 = require("zod");
 const notificationService_1 = require("../services/notificationService");
+const socket_1 = require("../socket");
 const createDeliverySchema = zod_1.z.object({
     pickupAddress: zod_1.z.string(),
     pickupLat: zod_1.z.number(),
@@ -18,11 +19,12 @@ const createDeliverySchema = zod_1.z.object({
     vehicleType: zod_1.z.string().optional(), // Allow vehicleType from frontend
     paymentMethod: zod_1.z.enum(['COD', 'TRANSFER', 'POS']).optional().default('COD'),
     price: zod_1.z.number().optional(),
-    distanceKm: zod_1.z.number().optional()
+    distanceKm: zod_1.z.number().optional(),
+    deliveryNote: zod_1.z.string().optional()
 });
 const createDelivery = async (req, res) => {
     try {
-        const { pickupAddress, pickupLat, pickupLng, dropoffAddress, dropoffLat, dropoffLng, paymentMethod, price, distanceKm } = createDeliverySchema.parse(req.body);
+        const { pickupAddress, pickupLat, pickupLng, dropoffAddress, dropoffLat, dropoffLng, paymentMethod, price, distanceKm, deliveryNote } = createDeliverySchema.parse(req.body);
         // 1. Geofence Check (Kano State Logic)
         // Bypass geofence for testing - simulators often use default coordinates outside Kano
         // if (!isWithinKano({ lat: pickupLat, lng: pickupLng })) {
@@ -44,6 +46,7 @@ const createDelivery = async (req, res) => {
                 dropoffLng,
                 price,
                 distanceKm,
+                deliveryNote,
                 status: client_1.DeliveryStatus.PENDING,
                 paymentMethod: paymentMethod,
             },
@@ -59,7 +62,14 @@ const createDelivery = async (req, res) => {
         res.status(201).json({ message: 'Delivery request created', delivery });
     }
     catch (error) {
-        console.error(error);
+        if (error instanceof zod_1.z.ZodError) {
+            console.error('[VALIDATION ERROR] createDelivery:', error.issues);
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: error.issues.map((issue) => ({ path: issue.path, message: issue.message }))
+            });
+        }
+        console.error('[ERROR] createDelivery:', error);
         res.status(400).json({ message: 'Failed to create delivery', error: error.message });
     }
 };
@@ -149,6 +159,14 @@ const getDeliveryById = async (req, res) => {
         res.json(formattedDelivery);
     }
     catch (error) {
+        if (error instanceof zod_1.z.ZodError) {
+            console.error('[VALIDATION ERROR] getDeliveryById:', error.issues);
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: error.issues.map((issue) => ({ path: issue.path, message: issue.message }))
+            });
+        }
+        console.error('[ERROR] getDeliveryById:', error);
         res.status(500).json({ message: 'Error fetching delivery', error: error.message });
     }
 };
@@ -287,13 +305,7 @@ const rateDelivery = async (req, res) => {
         res.json({ message: 'Rating submitted successfully' });
     }
     catch (error) {
-        console.error('[ERROR] Failed to submit rating:', {
-            deliveryId: req?.params?.id,
-            rating: req?.body?.rating,
-            customerId: req?.user?.id,
-            error: error.message,
-            stack: error.stack
-        });
+        console.error('[ERROR] Failed to submit rating:', error);
         res.status(500).json({ message: 'Failed to submit rating', error: error.message });
     }
 };
@@ -301,21 +313,51 @@ exports.rateDelivery = rateDelivery;
 const cancelDelivery = async (req, res) => {
     try {
         const { id } = req.params;
-        const customerId = req.user.id;
-        const delivery = await prisma_1.default.delivery.findUnique({ where: { id } });
+        const { reason } = req.body;
+        const requestingUser = req.user;
+        const delivery = await prisma_1.default.delivery.findUnique({
+            where: { id },
+            include: { customer: true, rider: true }
+        });
         if (!delivery) {
             return res.status(404).json({ message: 'Delivery not found' });
         }
-        if (delivery.customerId !== customerId) {
-            return res.status(403).json({ message: 'Only the customer can cancel this delivery' });
+        const isAdmin = requestingUser.role === 'ADMIN';
+        const isOwner = delivery.customerId === requestingUser.id;
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ message: 'Not authorized to cancel this delivery' });
         }
-        if (delivery.status !== 'PENDING') {
-            return res.status(400).json({ message: 'Can only logistically cancel pending deliveries' });
+        // Logical safety checks
+        if (delivery.status === 'DELIVERED' || delivery.status === 'CANCELLED') {
+            return res.status(400).json({ message: `Cannot cancel a delivery that is already ${delivery.status}` });
+        }
+        // If not admin, only PENDING can be cancelled
+        if (!isAdmin && delivery.status !== 'PENDING') {
+            return res.status(400).json({ message: 'Can only cancel pending deliveries' });
+        }
+        if (isAdmin && !reason) {
+            return res.status(400).json({ message: 'Admin must provide a reason for cancellation' });
         }
         const updatedDelivery = await prisma_1.default.delivery.update({
             where: { id },
             data: { status: 'CANCELLED' }
         });
+        // Notify parties
+        const notificationMessage = isAdmin
+            ? `Admin cancelled this request. Reason: ${reason}`
+            : `Customer cancelled the request.`;
+        socket_1.io.to(delivery.customerId.toString()).emit('delivery_updated', {
+            id: delivery.id,
+            status: 'CANCELLED',
+            message: notificationMessage
+        });
+        if (delivery.riderId) {
+            socket_1.io.to(delivery.riderId.toString()).emit('delivery_updated', {
+                id: delivery.id,
+                status: 'CANCELLED',
+                message: notificationMessage
+            });
+        }
         res.json({ message: 'Delivery cancelled successfully', delivery: updatedDelivery });
     }
     catch (error) {

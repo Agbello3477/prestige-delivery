@@ -182,6 +182,7 @@ model VendorOrder {
   deliveryOption  String  @default("PICKUP") // "PICKUP" or "DELIVERY"
   deliveryFee     Decimal?
   deliveryAddress String?
+  deliveryNote    String?
 
   deliveryId String?   @unique // Linked once a rider is dispatched
   delivery   Delivery? @relation(fields: [deliveryId], references: [id])
@@ -227,6 +228,7 @@ model Delivery {
   dropoffAddress String
   dropoffLat     Float?
   dropoffLng     Float?
+  deliveryNote   String?
   status         DeliveryStatus @default(PENDING)
   paymentMethod  PaymentMethod  @default(COD)
 
