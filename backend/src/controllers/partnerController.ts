@@ -53,6 +53,14 @@ export const createPartner = async (req: Request, res: Response) => {
         const token = generateToken({ id: user.id, email: user.email, role: user.role });
         res.status(201).json({ message: 'Partner created successfully', user });
     } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            console.error('[VALIDATION ERROR] createPartner:', error.issues);
+            return res.status(400).json({ 
+                message: 'Validation failed', 
+                errors: error.issues.map((e: any) => ({ path: e.path, message: e.message }))
+            });
+        }
+        console.error('[ERROR] createPartner:', error);
         res.status(400).json({ message: 'Failed to create partner', error: error.message });
     }
 };

@@ -109,15 +109,20 @@ const BookingScreen = ({ navigation }: any) => {
     };
 
     const handleCreateOrder = async () => {
+        if (!pickupLat || !pickupLng || !dropoffLat || !dropoffLng) {
+            Alert.alert('Error', 'Invalid location coordinates. Please re-select your pickup and dropoff locations using the search bar.');
+            return;
+        }
+
         setLoading(true);
         try {
             const currentData = {
                 pickupAddress,
-                pickupLat: pickupLat || 0,
-                pickupLng: pickupLng || 0,
+                pickupLat,
+                pickupLng,
                 dropoffAddress,
-                dropoffLat: dropoffLat || 0,
-                dropoffLng: dropoffLng || 0,
+                dropoffLat,
+                dropoffLng,
                 vehicleType,
                 paymentMethod,
                 price: estimate?.price,

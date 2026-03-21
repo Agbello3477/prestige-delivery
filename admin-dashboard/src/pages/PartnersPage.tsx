@@ -79,9 +79,13 @@ const PartnersPage = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            // Ensure agreedPercentage is a valid number, default to 0 if NaN
+            const percentage = parseFloat(String(formData.agreedPercentage));
+            const safePercentage = isNaN(percentage) ? 0 : percentage;
+
             const payload = {
                 ...formData,
-                agreedPercentage: formData.partnerType === 'AUTOMOBILE' ? Number(formData.agreedPercentage) : 0
+                agreedPercentage: formData.partnerType === 'AUTOMOBILE' ? safePercentage : 0
             };
 
             if (isEdit && editingPartnerId) {
@@ -93,9 +97,10 @@ const PartnersPage = () => {
             }
             setShowModal(false);
             fetchPartners();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving partner:', error);
-            alert('Failed to save partner');
+            const serverMessage = error.response?.data?.message || error.response?.data?.error || 'Validation failed. Please check all fields.';
+            alert(`Failed to save partner: ${serverMessage}`);
         }
     };
 

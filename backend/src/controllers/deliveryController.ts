@@ -66,7 +66,14 @@ export const createDelivery = async (req: any, res: Response) => {
 
         res.status(201).json({ message: 'Delivery request created', delivery });
     } catch (error: any) {
-        console.error(error);
+        if (error instanceof z.ZodError) {
+            console.error('[VALIDATION ERROR] createDelivery:', error.issues);
+            return res.status(400).json({ 
+                message: 'Validation failed', 
+                errors: error.issues.map((e: any) => ({ path: e.path, message: e.message }))
+            });
+        }
+        console.error('[ERROR] createDelivery:', error);
         res.status(400).json({ message: 'Failed to create delivery', error: error.message });
     }
 };
@@ -157,6 +164,14 @@ export const getDeliveryById = async (req: any, res: Response) => {
 
         res.json(formattedDelivery);
     } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            console.error('[VALIDATION ERROR] getDeliveryById:', error.issues);
+            return res.status(400).json({ 
+                message: 'Validation failed', 
+                errors: error.issues.map((e: any) => ({ path: e.path, message: e.message }))
+            });
+        }
+        console.error('[ERROR] getDeliveryById:', error);
         res.status(500).json({ message: 'Error fetching delivery', error: error.message });
     }
 };
