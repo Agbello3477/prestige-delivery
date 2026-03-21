@@ -172,15 +172,24 @@ export const deletePartner = async (req: Request, res: Response) => {
 
         // 3. Handle Deliveries (Unlink from user records)
         if (partner.deliveriesAsCustomer.length > 0) {
+            // Must delete tracking logs first
+            const deliveryIds = partner.deliveriesAsCustomer.map((d: any) => d.id);
+            await prisma.trackingLog.deleteMany({ where: { deliveryId: { in: deliveryIds } } });
             await prisma.delivery.deleteMany({ where: { customerId: userId } });
         }
         if (partner.deliveriesAsRider.length > 0) {
-            // Should not happen for partners usually, but safe-guard
             await prisma.delivery.updateMany({
                 where: { riderId: userId },
                 data: { riderId: null }
             });
         }
+
+        // 3.5 Handle other Rider/Partner specific loose ends
+        await prisma.guarantor.deleteMany({ where: { userId } });
+        await prisma.vehicle.updateMany({
+            where: { riderId: userId },
+            data: { riderId: null }
+        });
 
         // 4. Handle Partner Profile specific records
         if (profileId) {

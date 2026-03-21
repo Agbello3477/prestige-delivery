@@ -120,7 +120,9 @@ const PartnersPage = () => {
                 alert('Partner deleted successfully');
             } catch (error) {
                 console.error('Error deleting partner:', error);
-                alert('Failed to delete partner');
+                const axiosError = error as { response?: { data?: { message?: string } } };
+                const msg = axiosError.response?.data?.message || 'Failed to delete partner';
+                alert(`Error: ${msg}`);
             }
         }
     };
