@@ -103,7 +103,7 @@ const DeliveryHistoryScreen = () => {
                 />
             )}
             <View className="py-4 items-center">
-                <Text className="text-gray-400 text-[10px]">Powered by: MaSaha Secure Tech</Text>
+                <Text className="text-gray-400 text-[10px]">Powered by: MaSha Secure Tech</Text>
             </View>
         </SafeAreaView>
     );

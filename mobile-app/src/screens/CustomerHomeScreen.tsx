@@ -225,7 +225,7 @@ const CustomerHomeScreen = () => {
                 </TouchableOpacity>
 
                 <View className="mt-8 mb-4 items-center">
-                    <Text className="text-gray-400 text-xs text-center">Powered by: MaSaha Secure Tech</Text>
+                    <Text className="text-gray-400 text-xs text-center">Powered by: MaSha Secure Tech</Text>
                 </View>
             </ScrollView>
         </SafeAreaView>
