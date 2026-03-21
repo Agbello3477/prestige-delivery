@@ -199,10 +199,10 @@ const VendorMenuScreen = () => {
                 </>
             )}
 
-            {/* Cart Modal */}
-            <Modal visible={showCart} animationType="slide" transparent>
-                <View className="flex-1 bg-black/50 justify-end">
-                    <View className="bg-white rounded-t-3xl min-h-[50%] max-h-[90%] flex flex-col">
+            {/* Cart Modal Replacement (Absolute View to preserve Navigation Context) */}
+            {showCart && (
+                <View className="absolute flex-1 bg-black/50 justify-end z-[100] top-0 bottom-0 left-0 right-0" style={{ elevation: 100 }}>
+                    <View className="bg-white rounded-t-3xl min-h-[50%] max-h-[90%] flex flex-col" style={{ marginTop: 'auto' }}>
                         <View className="flex-row justify-between items-center p-6 border-b border-gray-100">
                             <Text className="text-2xl font-bold text-gray-900">Your Order</Text>
                             <TouchableOpacity onPress={() => setShowCart(false)}>
@@ -303,7 +303,7 @@ const VendorMenuScreen = () => {
                         </View>
                     </View>
                 </View>
-            </Modal>
+            )}
         </SafeAreaView>
     );
 };
