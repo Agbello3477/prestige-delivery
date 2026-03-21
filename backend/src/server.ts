@@ -9,11 +9,14 @@ import { initSocket } from './socket';
 const PORT = process.env.PORT || 3000;
 
 async function main() {
+    console.log('Starting application...');
     const httpServer = createServer(app);
+    console.log('HTTP server created...');
     const io = initSocket(httpServer);
+    console.log('Socket initialized...');
 
     httpServer.listen(PORT as number, '0.0.0.0', () => {
-        console.log(`Server is running on port ${PORT}`);
+        console.log(`Server successfully bound and is running on port ${PORT}`);
     });
 
     try {
