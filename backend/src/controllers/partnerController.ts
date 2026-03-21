@@ -68,7 +68,7 @@ export const createPartner = async (req: Request, res: Response) => {
 export const getPartners = async (req: Request, res: Response) => {
     try {
         const partners = await prisma.user.findMany({
-            where: { role: Role.PARTNER },
+            where: { role: Role.PARTNER, isArchived: false },
             select: {
                 id: true,
                 name: true,
@@ -83,6 +83,27 @@ export const getPartners = async (req: Request, res: Response) => {
         res.json(partners);
     } catch (error: any) {
         res.status(500).json({ message: 'Error fetching partners', error: error.message });
+    }
+};
+
+export const getArchivedPartners = async (req: Request, res: Response) => {
+    try {
+        const partners = await prisma.user.findMany({
+            where: { role: Role.PARTNER, isArchived: true },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                createdAt: true,
+                isVerified: true,
+                partnerProfile: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(partners);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error fetching archived partners', error: error.message });
     }
 };
 
@@ -142,9 +163,7 @@ export const deletePartner = async (req: Request, res: Response) => {
         const partner = await prisma.user.findUnique({
             where: { id: userId },
             include: { 
-                partnerProfile: true,
-                deliveriesAsRider: true,
-                deliveriesAsCustomer: true
+                partnerProfile: true
             }
         });
 
@@ -152,65 +171,64 @@ export const deletePartner = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Partner not found' });
         }
 
-        const profileId = partner.partnerProfile?.id;
-
-        // 1. Handle Audit Logs (Unlink but preserve history)
-        await prisma.auditLog.updateMany({
-            where: { userId },
-            data: { userId: null }
-        });
-
-        // 2. Handle Messages (Delete conversations)
-        await prisma.message.deleteMany({
-            where: {
-                OR: [
-                    { senderId: userId },
-                    { receiverId: userId }
-                ]
+        // Soft Delete: Mark as archived and deactivate profile
+        await prisma.user.update({
+            where: { id: userId },
+            data: { 
+                isArchived: true,
+                partnerProfile: partner.partnerProfile ? {
+                    update: { isActive: false }
+                } : undefined
             }
         });
 
-        // 3. Handle Deliveries (Unlink from user records)
-        if (partner.deliveriesAsCustomer.length > 0) {
-            // Must delete tracking logs first
-            const deliveryIds = partner.deliveriesAsCustomer.map((d: any) => d.id);
-            await prisma.trackingLog.deleteMany({ where: { deliveryId: { in: deliveryIds } } });
-            await prisma.delivery.deleteMany({ where: { customerId: userId } });
-        }
-        if (partner.deliveriesAsRider.length > 0) {
-            await prisma.delivery.updateMany({
-                where: { riderId: userId },
-                data: { riderId: null }
-            });
+        // 1. Optionally logout by invalidating sessions/setting isOnline false (If applicable)
+        if (partner.isOnline) {
+             await prisma.user.update({ where: { id: userId }, data: { isOnline: false, pushToken: null }});
         }
 
-        // 3.5 Handle other Rider/Partner specific loose ends
-        await prisma.guarantor.deleteMany({ where: { userId } });
-        await prisma.vehicle.updateMany({
-            where: { riderId: userId },
-            data: { riderId: null }
+        await logActivity(adminId, 'PARTNER_ARCHIVED', { partnerId: id, partnerName: partner.name }, req.ip || '');
+
+        res.json({ message: 'Partner archived successfully. Financial records are preserved.' });
+    } catch (error: any) {
+        console.error('Archive partner error:', error);
+        res.status(500).json({ message: 'Failed to archive partner', error: error.message });
+    }
+};
+
+export const restorePartner = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const adminId = (req as any).user.id;
+        const userId = parseInt(String(id));
+
+        const partner = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { 
+                partnerProfile: true
+            }
         });
 
-        // 4. Handle Partner Profile specific records
-        if (profileId) {
-            await prisma.menuItem.deleteMany({ where: { partnerId: profileId } });
-            await prisma.vendorOrder.deleteMany({ where: { partnerId: profileId } });
-            await prisma.vehicle.updateMany({
-                where: { partnerId: profileId },
-                data: { partnerId: null }
-            });
-            await prisma.partnerProfile.delete({ where: { id: profileId } });
+        if (!partner || partner.role !== Role.PARTNER) {
+            return res.status(404).json({ message: 'Partner not found' });
         }
 
-        // 5. Finally delete the User
-        await prisma.user.delete({ where: { id: userId } });
+        await prisma.user.update({
+            where: { id: userId },
+            data: { 
+                isArchived: false,
+                partnerProfile: partner.partnerProfile ? {
+                    update: { isActive: true }
+                } : undefined
+            }
+        });
 
-        await logActivity(adminId, 'PARTNER_DELETED', { partnerId: id, partnerName: partner.name }, req.ip || '');
+        await logActivity(adminId, 'PARTNER_RESTORED', { partnerId: id, partnerName: partner.name }, req.ip || '');
 
-        res.json({ message: 'Partner and all associated records deleted successfully' });
+        res.json({ message: 'Partner restored successfully.' });
     } catch (error: any) {
-        console.error('Delete partner error:', error);
-        res.status(500).json({ message: 'Failed to delete partner', error: error.message });
+        console.error('Restore partner error:', error);
+        res.status(500).json({ message: 'Failed to restore partner', error: error.message });
     }
 };
 

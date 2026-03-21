@@ -64,6 +64,7 @@ model User {
   gender     Gender?
   isVerified Boolean @default(false)
   isOnline   Boolean @default(false)
+  isArchived Boolean @default(false)
 
   @@index([role])
   @@index([isOnline])

@@ -32,14 +32,17 @@ const PartnersPage = () => {
         isActive: true
     });
 
+    const [activeTab, setActiveTab] = useState<'ACTIVE' | 'ARCHIVED'>('ACTIVE');
+
     useEffect(() => {
         fetchPartners();
-    }, []);
+    }, [activeTab]);
 
     const fetchPartners = async () => {
         setLoading(true);
         try {
-            const response = await api.get('/partners');
+            const endpoint = activeTab === 'ARCHIVED' ? '/partners/archived' : '/partners';
+            const response = await api.get(endpoint);
             setPartners(response.data);
         } catch (error) {
             console.error('Error fetching partners:', error);
@@ -112,16 +115,31 @@ const PartnersPage = () => {
         }
     };
 
-    const handleDelete = async (id: number, name: string) => {
-        if (window.confirm(`Are you sure you want to delete partner "${name}"? This action cannot be undone.`)) {
+    const handleArchive = async (id: number, name: string) => {
+        if (window.confirm(`Are you sure you want to archive partner "${name}"? Financial records will be kept.`)) {
             try {
                 await api.delete(`/partners/${id}`);
                 setPartners(partners.filter(p => p.id !== id));
-                alert('Partner deleted successfully');
+                alert('Partner archived successfully');
             } catch (error) {
-                console.error('Error deleting partner:', error);
+                console.error('Error archiving partner:', error);
                 const axiosError = error as { response?: { data?: { message?: string } } };
-                const msg = axiosError.response?.data?.message || 'Failed to delete partner';
+                const msg = axiosError.response?.data?.message || 'Failed to archive partner';
+                alert(`Error: ${msg}`);
+            }
+        }
+    };
+
+    const handleRestore = async (id: number, name: string) => {
+        if (window.confirm(`Are you sure you want to restore partner "${name}"?`)) {
+            try {
+                await api.post(`/partners/${id}/restore`);
+                setPartners(partners.filter(p => p.id !== id));
+                alert('Partner restored successfully');
+            } catch (error) {
+                console.error('Error restoring partner:', error);
+                const axiosError = error as { response?: { data?: { message?: string } } };
+                const msg = axiosError.response?.data?.message || 'Failed to restore partner';
                 alert(`Error: ${msg}`);
             }
         }
@@ -140,25 +158,44 @@ const PartnersPage = () => {
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Partner Management</h1>
                     <p className="text-gray-500 text-sm mt-1">View, track, and manage your delivery partners.</p>
                 </div>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700 transition-all font-medium shadow-sm active:scale-95"
-                >
-                    <Plus size={18} />
-                    Add Partner
-                </button>
+                {activeTab === 'ACTIVE' && (
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex items-center gap-2 bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700 transition-all font-medium shadow-sm active:scale-95"
+                    >
+                        <Plus size={18} />
+                        Add Partner
+                    </button>
+                )}
             </div>
 
-            {/* Search Bar */}
-            <div className="relative mb-8">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors" size={18} />
-                <input
-                    type="text"
-                    placeholder="Search by business name, owner name, or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-shadow bg-white shadow-xs"
-                />
+            {/* Tabs & Search Container */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
+                <div className="flex bg-gray-100 p-1 rounded-xl">
+                    <button
+                        onClick={() => setActiveTab('ACTIVE')}
+                        className={`px-6 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'ACTIVE' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Active Partners
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('ARCHIVED')}
+                        className={`px-6 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'ARCHIVED' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Archived / Deactivated
+                    </button>
+                </div>
+                
+                <div className="relative w-full md:w-96">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search partners..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-shadow bg-white shadow-sm"
+                    />
+                </div>
             </div>
 
             {/* Table Container */}
@@ -229,22 +266,35 @@ const PartnersPage = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
+                                            {activeTab === 'ACTIVE' ? (
+                                                <>
+                                                    <button 
+                                                        onClick={() => handleOpenModal(partner)}
+                                                        className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                                                        title="Edit Partner"
+                                                        aria-label={`Edit ${partner.name}`}
+                                                    >
+                                                        <Edit2 size={18} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleArchive(partner.id, partner.partnerProfile?.businessName || partner.name)}
+                                                        className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors ml-2"
+                                                        title="Archive Partner"
+                                                        aria-label={`Archive ${partner.name}`}
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </>
+                                            ) : (
                                                 <button 
-                                                    onClick={() => handleOpenModal(partner)}
-                                                    className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                                                    title="Edit Partner"
-                                                    aria-label={`Edit ${partner.name}`}
+                                                    onClick={() => handleRestore(partner.id, partner.partnerProfile?.businessName || partner.name)}
+                                                    className="px-3 py-1.5 text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors border border-brand-200"
+                                                    title="Restore Partner"
+                                                    aria-label={`Restore ${partner.name}`}
                                                 >
-                                                    <Edit2 size={18} />
+                                                    Restore Account
                                                 </button>
-                                                <button 
-                                                    onClick={() => handleDelete(partner.id, partner.partnerProfile?.businessName || partner.name)}
-                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete Partner"
-                                                    aria-label={`Delete ${partner.name}`}
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
