@@ -54,6 +54,13 @@ const DeliveryHistoryScreen = () => {
                 <Text className="text-xs text-gray-400">TO</Text>
                 <Text className="text-sm text-gray-700" numberOfLines={1}>{item.dropoffAddress}</Text>
             </View>
+
+            {item.deliveryNote && (
+                <View className="mb-3 bg-yellow-50 p-2 rounded border border-yellow-200">
+                    <Text className="text-xs text-yellow-800 font-bold">RIDER NOTES</Text>
+                    <Text className="text-xs text-yellow-900 mt-1" numberOfLines={2}>{item.deliveryNote}</Text>
+                </View>
+            )}
             
             <View className="flex-row justify-between items-center pt-2 border-t border-gray-50">
                 <Text className="text-gray-400 text-xs">{new Date(item.createdAt).toLocaleDateString()}</Text>

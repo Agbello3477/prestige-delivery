@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
@@ -27,6 +27,7 @@ const BookingScreen = ({ navigation }: any) => {
         dropoffLat, setDropoffLat,
         dropoffLng, setDropoffLng,
         vehicleType, setVehicleType,
+        deliveryNote, setDeliveryNote,
         resetBooking
     } = useBooking();
 
@@ -126,7 +127,8 @@ const BookingScreen = ({ navigation }: any) => {
                 vehicleType,
                 paymentMethod,
                 price: estimate?.price,
-                distanceKm: parseFloat(estimate?.distance?.replace(' km', '') || '0')
+                distanceKm: parseFloat(estimate?.distance?.replace(' km', '') || '0'),
+                deliveryNote
             };
 
             console.log('Sending Delivery Data:', currentData);
@@ -340,6 +342,20 @@ const BookingScreen = ({ navigation }: any) => {
                                             defaultValue: dropoffAddress || '',
                                             placeholderTextColor: '#9ca3af',
                                         }}
+                                    />
+                                </View>
+
+                                {/* Delivery Notes / Rider Instructions */}
+                                <View style={{ zIndex: 500, marginTop: -8, marginBottom: 16 }}>
+                                    <Text className="text-gray-500 text-xs mb-1">CALL INSTRUCTIONS / RIDER NOTES (OPTIONAL)</Text>
+                                    <TextInput
+                                        className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900"
+                                        placeholder="e.g. Call 080... when you arrive, or ask for John."
+                                        value={deliveryNote}
+                                        onChangeText={setDeliveryNote}
+                                        multiline
+                                        numberOfLines={2}
+                                        style={{ minHeight: 60 }}
                                     />
                                 </View>
 

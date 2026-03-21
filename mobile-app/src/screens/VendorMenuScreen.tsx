@@ -13,6 +13,7 @@ const VendorMenuScreen = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deliveryOption, setDeliveryOption] = useState<'PICKUP' | 'DELIVERY'>('PICKUP');
     const [deliveryAddress, setDeliveryAddress] = useState('');
+    const [deliveryNote, setDeliveryNote] = useState('');
 
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
@@ -85,13 +86,14 @@ const VendorMenuScreen = () => {
                 totalAmount: grandTotal,
                 deliveryOption,
                 deliveryAddress: deliveryOption === 'DELIVERY' ? deliveryAddress : undefined,
-                deliveryFee: deliveryOption === 'DELIVERY' ? deliveryFee : undefined
+                deliveryFee: deliveryOption === 'DELIVERY' ? deliveryFee : undefined,
+                deliveryNote: deliveryNote || undefined
             };
             await api.post('/partners/orders', orderPayload);
             setShowCart(false);
             setCart({});
             Alert.alert('Order Placed!', 'Your order has been sent to the vendor successfully. You will be notified when it is ready or dispatched.', [
-                { text: 'OK', onPress: () => navigation.navigate('WelcomeHome') }
+                { text: 'OK', onPress: () => navigation.navigate('DeliveryHistory') }
             ]);
         } catch (error) {
             console.error('Failed to submit vendor order', error);
@@ -247,11 +249,20 @@ const VendorMenuScreen = () => {
                                     <View className="mb-6">
                                         <Text className="text-gray-700 font-bold mb-2">Delivery Address</Text>
                                         <TextInput
-                                            className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900"
+                                            className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 mb-3"
                                             placeholder="Enter your full address..."
                                             value={deliveryAddress}
                                             onChangeText={setDeliveryAddress}
                                             multiline
+                                        />
+                                        <Text className="text-gray-700 font-bold mb-2">Call Instructions / Rider Notes (Optional)</Text>
+                                        <TextInput
+                                            className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900"
+                                            placeholder="e.g. Call this number when you arrive..."
+                                            value={deliveryNote}
+                                            onChangeText={setDeliveryNote}
+                                            multiline
+                                            style={{ minHeight: 60 }}
                                         />
                                     </View>
                                 )}

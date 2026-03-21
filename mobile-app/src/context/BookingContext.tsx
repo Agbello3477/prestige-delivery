@@ -16,6 +16,8 @@ interface BookingContextType {
     setDropoffLng: (lng: number | null) => void;
     vehicleType: string;
     setVehicleType: (type: string) => void;
+    deliveryNote: string;
+    setDeliveryNote: (note: string) => void;
     resetBooking: () => void;
 }
 
@@ -29,6 +31,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
     const [dropoffLat, setDropoffLat] = useState<number | null>(null);
     const [dropoffLng, setDropoffLng] = useState<number | null>(null);
     const [vehicleType, setVehicleType] = useState('bike');
+    const [deliveryNote, setDeliveryNote] = useState('');
 
     const resetBooking = () => {
         setPickupAddress('');
@@ -38,6 +41,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
         setDropoffLat(null);
         setDropoffLng(null);
         setVehicleType('bike');
+        setDeliveryNote('');
     };
 
     return (
@@ -49,6 +53,7 @@ export const BookingProvider = ({ children }: { children: ReactNode }) => {
             dropoffLat, setDropoffLat,
             dropoffLng, setDropoffLng,
             vehicleType, setVehicleType,
+            deliveryNote, setDeliveryNote,
             resetBooking
         }}>
             {children}

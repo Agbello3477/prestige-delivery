@@ -254,6 +254,17 @@ const OrderTrackingScreen = () => {
                         <Text className="text-gray-500 text-xs mb-1">DROPOFF</Text>
                         <Text className="text-gray-900 font-medium">{delivery.dropoffAddress}</Text>
                     </View>
+
+                    {delivery.deliveryNote && (
+                        <>
+                            <View className="h-[1px] bg-gray-100 my-4"></View>
+                            <View className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                <Text className="text-yellow-800 text-xs font-bold mb-1">RIDER INSTRUCTIONS / NOTES</Text>
+                                <Text className="text-yellow-900 font-medium text-sm">{delivery.deliveryNote}</Text>
+                            </View>
+                        </>
+                    )}
+
                     <View className="h-[1px] bg-gray-100 my-4"></View>
                     <View className="flex-row justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
                         <Text className="text-gray-500 text-xs font-bold">PAYMENT METHOD</Text>
