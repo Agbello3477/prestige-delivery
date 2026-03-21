@@ -97,9 +97,10 @@ const PartnersPage = () => {
             }
             setShowModal(false);
             fetchPartners();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error saving partner:', error);
-            const serverMessage = error.response?.data?.message || error.response?.data?.error || 'Validation failed. Please check all fields.';
+            const axiosError = error as { response?: { data?: { message?: string, error?: string } } };
+            const serverMessage = axiosError.response?.data?.message || axiosError.response?.data?.error || 'Validation failed. Please check all fields.';
             alert(`Failed to save partner: ${serverMessage}`);
         }
     };
@@ -315,9 +316,13 @@ const PartnersPage = () => {
                                                 required
                                                 min="0"
                                                 max="100"
-                                                value={formData.agreedPercentage}
-                                                onChange={(e) => setFormData({ ...formData, agreedPercentage: parseFloat(e.target.value) })}
-                                                className="w-full px-3 py-2.5 border border-brand-200 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm font-bold text-brand-900"
+                                                value={isNaN(formData.agreedPercentage as number) ? '' : formData.agreedPercentage}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                                    setFormData({ ...formData, agreedPercentage: val });
+                                                }}
+                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-3 border"
+                                                placeholder="e.g. 10"
                                             />
                                         </div>
                                     )}

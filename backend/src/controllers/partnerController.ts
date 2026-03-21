@@ -57,7 +57,7 @@ export const createPartner = async (req: Request, res: Response) => {
             console.error('[VALIDATION ERROR] createPartner:', error.issues);
             return res.status(400).json({ 
                 message: 'Validation failed', 
-                errors: error.issues.map((e: any) => ({ path: e.path, message: e.message }))
+                errors: error.issues.map((issue) => ({ path: issue.path, message: issue.message }))
             });
         }
         console.error('[ERROR] createPartner:', error);

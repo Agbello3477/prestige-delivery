@@ -70,7 +70,7 @@ export const createDelivery = async (req: any, res: Response) => {
             console.error('[VALIDATION ERROR] createDelivery:', error.issues);
             return res.status(400).json({ 
                 message: 'Validation failed', 
-                errors: error.issues.map((e: any) => ({ path: e.path, message: e.message }))
+                errors: error.issues.map((issue) => ({ path: issue.path, message: issue.message }))
             });
         }
         console.error('[ERROR] createDelivery:', error);
@@ -168,7 +168,7 @@ export const getDeliveryById = async (req: any, res: Response) => {
             console.error('[VALIDATION ERROR] getDeliveryById:', error.issues);
             return res.status(400).json({ 
                 message: 'Validation failed', 
-                errors: error.issues.map((e: any) => ({ path: e.path, message: e.message }))
+                errors: error.issues.map((issue) => ({ path: issue.path, message: issue.message }))
             });
         }
         console.error('[ERROR] getDeliveryById:', error);
