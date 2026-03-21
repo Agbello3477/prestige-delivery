@@ -99,8 +99,15 @@ const PartnersPage = () => {
             fetchPartners();
         } catch (error) {
             console.error('Error saving partner:', error);
-            const axiosError = error as { response?: { data?: { message?: string, error?: string } } };
-            const serverMessage = axiosError.response?.data?.message || axiosError.response?.data?.error || 'Validation failed. Please check all fields.';
+            const axiosError = error as { response?: { data?: { message?: string, error?: string, errors?: Array<{path: string[], message: string}> } } };
+            
+            let serverMessage = axiosError.response?.data?.message || axiosError.response?.data?.error || 'Validation failed. Please check all fields.';
+            
+            if (axiosError.response?.data?.errors && axiosError.response.data.errors.length > 0) {
+                const details = axiosError.response.data.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+                serverMessage = `${serverMessage} (${details})`;
+            }
+
             alert(`Failed to save partner: ${serverMessage}`);
         }
     };
