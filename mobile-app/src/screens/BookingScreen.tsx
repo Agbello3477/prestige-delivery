@@ -143,8 +143,16 @@ const BookingScreen = ({ navigation }: any) => {
             ]);
         } catch (error: any) {
             console.error('Create Order Error:', error);
-            const errorMessage = error.response?.data?.message || 'Failed to create order. Please try again.';
-            Alert.alert('Error', errorMessage);
+            
+            let errorMessage = error.response?.data?.message || 'Failed to create order. Please try again.';
+            
+            // If there are detailed Zod validation errors, expand the message
+            if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+                const detailedErrors = error.response.data.errors.map((err: any) => `${err.path.join('.')}: ${err.message}`).join('\n');
+                errorMessage += `\n\nDetails:\n${detailedErrors}`;
+            }
+
+            Alert.alert('Booking Error', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -268,9 +276,6 @@ const BookingScreen = ({ navigation }: any) => {
                                                 backgroundColor: 'white',
                                                 borderRadius: 8,
                                                 elevation: 5,
-                                                zIndex: 9999,
-                                                position: 'absolute',
-                                                top: 45,
                                                 borderWidth: 1,
                                                 borderColor: '#f3f4f6',
                                                 maxHeight: 200,
@@ -325,9 +330,6 @@ const BookingScreen = ({ navigation }: any) => {
                                                 backgroundColor: 'white',
                                                 borderRadius: 8,
                                                 elevation: 5,
-                                                zIndex: 9999,
-                                                position: 'absolute',
-                                                top: 45,
                                                 borderWidth: 1,
                                                 borderColor: '#f3f4f6',
                                                 maxHeight: 200,
