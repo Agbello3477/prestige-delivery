@@ -10,6 +10,7 @@ export const BACKEND_URL = PRODUCTION_URL;
 
 
 const BASE_URL = `${BACKEND_URL}/api`;
+console.log('API Target:', BASE_URL);
 
 const api = axios.create({
     baseURL: BASE_URL,

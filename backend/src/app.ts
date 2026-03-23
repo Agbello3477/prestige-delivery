@@ -73,4 +73,19 @@ app.get('/', (req, res) => {
     res.json({ message: 'Prestige Logistics API is running' });
 });
 
+// Global Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[ERROR] [GLOBAL]:', {
+        message: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
+        body: req.body
+    });
+    res.status(500).json({ 
+        message: 'Internal Server Error', 
+        error: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message 
+    });
+});
+
 export default app;

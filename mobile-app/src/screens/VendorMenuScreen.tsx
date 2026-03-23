@@ -95,9 +95,17 @@ const VendorMenuScreen = () => {
             Alert.alert('Order Placed!', 'Your order has been sent to the vendor successfully. You will be notified when it is ready or dispatched.', [
                 { text: 'OK', onPress: () => navigation.navigate('DeliveryHistory') }
             ]);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to submit vendor order', error);
-            Alert.alert('Error', 'Failed to place the order. Please try again.');
+            let errorMessage = error.response?.data?.message || 'Failed to place the order. Please try again.';
+            
+            // If there are detailed Zod validation errors, expand the message
+            if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+                const detailedErrors = error.response.data.errors.map((err: any) => `${err.path.join('.')}: ${err.message}`).join('\n');
+                errorMessage += `\n\nDetails:\n${detailedErrors}`;
+            }
+
+            Alert.alert('Checkout Error', errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -204,7 +212,7 @@ const VendorMenuScreen = () => {
                 <View className="absolute flex-1 bg-black/50 justify-end z-[100] top-0 bottom-0 left-0 right-0" style={{ elevation: 100 }}>
                     <View className="bg-white rounded-t-3xl min-h-[50%] max-h-[90%] flex flex-col" style={{ marginTop: 'auto' }}>
                         <View className="flex-row justify-between items-center p-6 border-b border-gray-100">
-                            <Text className="text-2xl font-bold text-gray-900">Your Order</Text>
+                            <Text className="text-2xl font-bold text-gray-900">Prestige Fresh Checkout</Text>
                             <TouchableOpacity onPress={() => setShowCart(false)}>
                                 <Feather name="x" size={24} color="#6b7280" />
                             </TouchableOpacity>

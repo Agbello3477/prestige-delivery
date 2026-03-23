@@ -349,18 +349,22 @@ export const createVendorOrder = async (req: Request, res: Response) => {
         const customerId = (req as any).user.id;
         const { partnerId, items, prescriptionUrl, totalAmount, deliveryOption, deliveryAddress, deliveryFee, deliveryNote } = req.body;
 
+        const orderPayload = {
+            partnerId: parseInt(partnerId),
+            customerId,
+            items,
+            prescriptionUrl,
+            totalAmount: totalAmount ? totalAmount.toString() : "0",
+            deliveryOption: deliveryOption || 'PICKUP',
+            deliveryAddress: deliveryAddress || null,
+            deliveryFee: deliveryFee ? deliveryFee.toString() : null,
+            deliveryNote: deliveryNote || null
+        };
+
+        console.log('[DEBUG] Creating Vendor Order Payload:', JSON.stringify(orderPayload, null, 2));
+
         const order = await prisma.vendorOrder.create({
-            data: {
-                partnerId: parseInt(partnerId),
-                customerId,
-                items,
-                prescriptionUrl,
-                totalAmount: totalAmount.toString(),
-                deliveryOption: deliveryOption || 'PICKUP',
-                deliveryAddress: deliveryAddress || null,
-                deliveryFee: deliveryFee ? deliveryFee.toString() : null,
-                deliveryNote: deliveryNote || null
-            },
+            data: orderPayload,
             include: { partner: true }
         });
 
@@ -368,6 +372,7 @@ export const createVendorOrder = async (req: Request, res: Response) => {
         if (order.deliveryOption === 'DELIVERY') {
             const partnerAddress = order.partner.address || 'Vendor Location';
             
+            console.log('[DEBUG] Triggering Delivery for Vendor Order:', order.id);
             const delivery = await prisma.delivery.create({
                 data: {
                     pickupAddress: partnerAddress,
@@ -387,8 +392,12 @@ export const createVendorOrder = async (req: Request, res: Response) => {
 
         res.status(201).json(order);
     } catch (error: any) {
-        console.error('Error creating vendor order:', error);
-        res.status(500).json({ message: 'Failed to create vendor order', error: error.message });
+        console.error('[ERROR] createVendorOrder:', error);
+        res.status(500).json({ 
+            message: 'Failed to create vendor order', 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'production' ? undefined : error.stack 
+        });
     }
 };
 
