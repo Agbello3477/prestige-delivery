@@ -101,7 +101,9 @@ export const getAllDeliveries = async (req: any, res: Response) => {
 
 export const getMyDeliveries = async (req: any, res: Response) => {
     try {
-        const userId = req.user.id;
+        const userId = parseInt(req.user.id);
+        console.log('[DEBUG] Fetching deliveries for user:', userId);
+        
         const deliveries = await prisma.delivery.findMany({
             where: {
                 OR: [
@@ -110,20 +112,25 @@ export const getMyDeliveries = async (req: any, res: Response) => {
                 ]
             },
             include: {
-                rider: { select: { name: true, phone: true } },
-                customer: { select: { name: true, phone: true } }
+                rider: { select: { id: true, name: true, phone: true } },
+                customer: { select: { id: true, name: true, phone: true } }
             },
             orderBy: { createdAt: 'desc' }
         });
         res.json(deliveries);
     } catch (error: any) {
-        res.status(500).json({ message: 'Error fetching deliveries', error: error.message });
+        console.error('[ERROR] [getMyDeliveries]:', error);
+        res.status(500).json({ 
+            message: 'Error fetching deliveries', 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'production' ? undefined : error.stack
+        });
     }
 };
 
 export const getDeliveryById = async (req: any, res: Response) => {
     try {
-        const { id } = req.params;
+        const id = parseInt(req.params.id);
         const delivery = await prisma.delivery.findUnique({
             where: { id },
             include: {

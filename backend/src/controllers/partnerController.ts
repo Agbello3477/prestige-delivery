@@ -391,6 +391,14 @@ export const createVendorOrder = async (req: Request, res: Response) => {
         }
 
         res.status(201).json(order);
+
+        // Notify partner dashboard via Socket.io
+        if (io) {
+            console.log('[DEBUG] Emitting new_order to partner:', order.partnerId);
+            io.emit('new_order', order);
+            // Optionally emit to a private room
+            io.to(order.partnerId.toString()).emit('new_order', order);
+        }
     } catch (error: any) {
         console.error('[ERROR] createVendorOrder:', error);
         res.status(500).json({ 

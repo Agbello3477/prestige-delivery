@@ -17,6 +17,7 @@ import PharmacyPrescriptionUploadScreen from '../screens/PharmacyPrescriptionUpl
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import DeliveryHistoryScreen from '../screens/DeliveryHistoryScreen';
+import VendorOrderCartScreen from '../screens/VendorOrderCartScreen';
 import { useAuth } from '../context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -58,6 +59,7 @@ const RootNavigator = () => {
                         <Stack.Screen name="Call" component={CallScreen} />
                         <Stack.Screen name="VendorList" component={VendorListScreen} />
                         <Stack.Screen name="VendorMenu" component={VendorMenuScreen} />
+                        <Stack.Screen name="VendorOrderCart" component={VendorOrderCartScreen} />
                         <Stack.Screen name="PharmacyPrescriptionUpload" component={PharmacyPrescriptionUploadScreen} />
                         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
                         <Stack.Screen name="DeliveryHistory" component={DeliveryHistoryScreen} />

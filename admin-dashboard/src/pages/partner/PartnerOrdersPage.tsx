@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import api from '../../services/api';
-import { Package, Clock, CheckCircle } from 'lucide-react';
+import api, { BASE_URL } from '../../services/api';
+import { Package, Clock, CheckCircle, Bell } from 'lucide-react';
+import { io } from 'socket.io-client';
+import { useAuth } from '../../context/AuthContext';
 
 interface OrderItem {
     name: string;
@@ -18,12 +20,33 @@ interface VendorOrder {
 }
 
 const PartnerOrdersPage = () => {
+    const { user } = useAuth();
     const [orders, setOrders] = useState<VendorOrder[]>([]);
     const [loading, setLoading] = useState(true);
+    const [newOrderAlert, setNewOrderAlert] = useState(false);
 
     useEffect(() => {
         fetchOrders();
-    }, []);
+
+        // Socket.io initialization
+        const socket = io(BASE_URL);
+
+        if (user) {
+            socket.emit('join', user.id.toString());
+        }
+
+        socket.on('new_order', (newOrder: VendorOrder) => {
+            console.log('New order received via socket:', newOrder);
+            setOrders(prev => [newOrder, ...prev]);
+            setNewOrderAlert(true);
+            // Play a sound if possible, or just show the alert
+            setTimeout(() => setNewOrderAlert(false), 8000);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [user]);
 
     const fetchOrders = async () => {
         try {
@@ -65,6 +88,19 @@ const PartnerOrdersPage = () => {
                 <h1 className="text-2xl font-bold text-gray-800">Incoming Orders</h1>
                 <p className="text-gray-500">Manage orders placed directly from the customer app.</p>
             </div>
+
+            {newOrderAlert && (
+                <div className="bg-brand-600 text-white p-4 rounded-xl shadow-lg flex items-center justify-between animate-bounce">
+                    <div className="flex items-center gap-3">
+                        <Bell className="animate-pulse" />
+                        <div>
+                            <p className="font-bold">New Order Received!</p>
+                            <p className="text-sm opacity-90">A new customer order has just arrived.</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setNewOrderAlert(false)} className="text-white/80 hover:text-white">✕</button>
+                </div>
+            )}
 
             {loading ? (
                 <div className="text-center py-12 text-gray-500">Loading orders...</div>
