@@ -130,7 +130,7 @@ export const getMyDeliveries = async (req: any, res: Response) => {
 
 export const getDeliveryById = async (req: any, res: Response) => {
     try {
-        const id = parseInt(req.params.id);
+        const id = req.params.id; // Delivery ID is a String (UUID)
         const delivery = await prisma.delivery.findUnique({
             where: { id },
             include: {
@@ -158,16 +158,16 @@ export const getDeliveryById = async (req: any, res: Response) => {
 
         const formattedDelivery = {
             ...delivery,
-            rider: delivery.rider ? {
-                name: delivery.rider.name,
-                phone: delivery.rider.phone,
-                vehicleType: delivery.rider.vehicles[0]?.type || 'Unknown',
-                vehicles: delivery.rider.vehicles,
-                passportUrl: delivery.rider.passportUrl
+            rider: (delivery as any).rider ? {
+                name: (delivery as any).rider.name,
+                phone: (delivery as any).rider.phone,
+                vehicleType: (delivery as any).rider.vehicles?.[0]?.type || 'Unknown',
+                vehicles: (delivery as any).rider.vehicles || [],
+                passportUrl: (delivery as any).rider.passportUrl
             } : null,
-            currentLocation: delivery.trackingLogs[0] ? {
-                lat: delivery.trackingLogs[0].lat,
-                lng: delivery.trackingLogs[0].lng
+            currentLocation: (delivery as any).trackingLogs?.[0] ? {
+                lat: (delivery as any).trackingLogs[0].lat,
+                lng: (delivery as any).trackingLogs[0].lng
             } : null
         };
 
