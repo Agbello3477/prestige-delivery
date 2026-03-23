@@ -9,21 +9,29 @@ import { io } from '../socket';
 
 const createDeliverySchema = z.object({
     pickupAddress: z.string(),
-    pickupLat: z.number(),
-    pickupLng: z.number(),
+    pickupLat: z.coerce.number(),
+    pickupLng: z.coerce.number(),
     dropoffAddress: z.string(),
-    dropoffLat: z.number(),
-    dropoffLng: z.number(),
-    vehicleType: z.string().optional(), // Allow vehicleType from frontend
+    dropoffLat: z.coerce.number(),
+    dropoffLng: z.coerce.number(),
+    vehicleType: z.string().optional(),
     paymentMethod: z.enum(['COD', 'TRANSFER', 'POS']).optional().default('COD'),
-    price: z.number().optional(),
-    distanceKm: z.number().optional(),
+    price: z.coerce.number().optional(),
+    distanceKm: z.coerce.number().optional(),
     deliveryNote: z.string().optional()
 });
 
 export const createDelivery = async (req: any, res: Response) => {
     try {
-        const { pickupAddress, pickupLat, pickupLng, dropoffAddress, dropoffLat, dropoffLng, paymentMethod, price, distanceKm, deliveryNote } = createDeliverySchema.parse(req.body);
+        console.log('[DEBUG] createDelivery Payload:', JSON.stringify(req.body, null, 2));
+        console.log('[DEBUG] createDelivery User:', req.user);
+
+        const { 
+            pickupAddress, pickupLat, pickupLng, 
+            dropoffAddress, dropoffLat, dropoffLng, 
+            paymentMethod, price, distanceKm, deliveryNote,
+            vehicleType 
+        } = createDeliverySchema.parse(req.body);
 
         // 1. Geofence Check (Kano State Logic)
         // Bypass geofence for testing - simulators often use default coordinates outside Kano
@@ -50,6 +58,7 @@ export const createDelivery = async (req: any, res: Response) => {
                 price,
                 distanceKm,
                 deliveryNote,
+                vehicleType,
                 status: DeliveryStatus.PENDING,
                 paymentMethod: paymentMethod as any,
             },
@@ -64,19 +73,23 @@ export const createDelivery = async (req: any, res: Response) => {
         //    // Notify riders...
         // }
 
-        console.log(`Delivery ${delivery.id} created. Matching logic initiated.`);
+        console.log(`Delivery ${delivery.id} created successfully for user ${userId}`);
 
         res.status(201).json({ message: 'Delivery request created', delivery });
     } catch (error: any) {
         if (error instanceof z.ZodError) {
-            console.error('[VALIDATION ERROR] createDelivery:', error.issues);
+            console.error('[VALIDATION ERROR] createDelivery:', JSON.stringify(error.issues, null, 2));
             return res.status(400).json({ 
                 message: 'Validation failed', 
                 errors: error.issues.map((issue) => ({ path: issue.path, message: issue.message }))
             });
         }
-        console.error('[ERROR] createDelivery:', error);
-        res.status(400).json({ message: 'Failed to create delivery', error: error.message });
+        console.error('[CRITICAL ERROR] createDelivery:', error);
+        res.status(500).json({ 
+            message: 'Failed to create delivery', 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'production' ? undefined : error.stack 
+        });
     }
 };
 

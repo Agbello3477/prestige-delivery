@@ -231,6 +231,7 @@ model Delivery {
   deliveryNote   String?
   status         DeliveryStatus @default(PENDING)
   paymentMethod  PaymentMethod  @default(COD)
+  vehicleType    String?        @default("BIKE")
 
   @@index([status])
   @@index([createdAt])
