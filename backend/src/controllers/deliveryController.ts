@@ -214,6 +214,14 @@ export const getPendingDeliveries = async (req: any, res: Response) => {
             },
             orderBy: { createdAt: 'desc' }
         });
+        console.log(`[DEBUG] getPendingDeliveries Count: ${deliveries.length}`);
+        if (deliveries.length > 0) {
+            console.log(`[DEBUG] First Delivery Sample:`, JSON.stringify({
+                id: deliveries[0].id,
+                note: deliveries[0].deliveryNote,
+                status: deliveries[0].status
+            }, null, 2));
+        }
         res.json(deliveries);
     } catch (error: any) {
         res.status(500).json({ message: 'Error fetching pending deliveries', error: error.message });
@@ -265,17 +273,27 @@ export const updateDeliveryStatus = async (req: any, res: Response) => {
 
         // Fire Expo Notification
         if (status === DeliveryStatus.DELIVERED && updatedDelivery.customer?.pushToken) {
-            await sendPushNotification(
-                [updatedDelivery.customer.pushToken],
-                "Delivery Completed! 🎉",
-                "Your Parcel has been successfully delivered. Thank you for using Prestige Delivery and Logistics Services.",
-                { deliveryId: updatedDelivery.id }
-            );
+            try {
+                await sendPushNotification(
+                    [updatedDelivery.customer.pushToken],
+                    "Delivery Completed! 🎉",
+                    "Your Parcel has been successfully delivered. Thank you for using Prestige Delivery and Logistics Services.",
+                    { deliveryId: updatedDelivery.id }
+                );
+            } catch (notifyError) {
+                console.error('[ERROR] Push notification failed:', notifyError);
+            }
         }
 
+        console.log(`[DEBUG] updateDeliveryStatus SUCCESS: ${id} updated to ${status}`);
         res.json(updatedDelivery);
     } catch (error: any) {
-        res.status(500).json({ message: 'Error updating delivery status', error: error.message });
+        console.error(`[DEBUG] updateDeliveryStatus PRISMA/INTERNAL ERROR:`, error);
+        res.status(500).json({ 
+            message: 'Error updating delivery status', 
+            error: error.message,
+            stack: error.stack
+        });
     }
 };
 
