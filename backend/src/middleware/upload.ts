@@ -1,21 +1,28 @@
-import multer, { FileFilterCallback } from 'multer';
-import { Request } from 'express';
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import dotenv from 'dotenv';
 
-type DestinationCallback = (error: Error | null, destination: string) => void;
-type FileNameCallback = (error: Error | null, filename: string) => void;
+dotenv.config();
 
-const storage = multer.diskStorage({
-    destination: (req: Request, file: any, cb: DestinationCallback) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req: Request, file: any, cb: FileNameCallback) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'prestige_delivery_proofs',
+        allowed_formats: ['jpg', 'png', 'jpeg'],
+        public_id: (req: any, file: any) => `${Date.now()}-${file.originalname?.split('.')[0] || 'proof'}`
+    } as any,
 });
 
 export const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 50 * 1024 * 1024 // 50MB limit for video
+        fileSize: 10 * 1024 * 1024 // 10MB limit
     }
 });
