@@ -30,6 +30,7 @@ const ChatScreen = () => {
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(true);
     const [socket, setSocket] = useState<Socket | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
     const flatListRef = useRef<FlatList>(null);
 
     // 1. Fetch Chat History
@@ -56,21 +57,36 @@ const ChatScreen = () => {
         if (!user) return;
 
         const newSocket = io(SOCKET_URL, {
-            transports: ['websocket'],
+            transports: ['websocket', 'polling'],
             forceNew: true
         });
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
             console.log('Connected to socket server');
+            setIsConnected(true);
             newSocket.emit('join', user.id.toString());
+        });
+
+        newSocket.on('disconnect', () => {
+            setIsConnected(false);
+        });
+
+        newSocket.on('connect_error', (error: any) => {
+            console.error('Socket Connection Error:', error);
+            setIsConnected(false);
+            // Alert.alert('Chat Connectivity', 'Warning: Lost real-time connection. Messages may be delayed.');
+        });
+
+        newSocket.on('error', (error: any) => {
+            console.error('Socket General Error:', error);
         });
 
         newSocket.on('receive_message', (message: Message) => {
             // Only add if it belongs to this current chat
             if (
-                (message.senderId === receiverId && message.receiverId === user?.id) ||
-                (message.senderId === user?.id && message.receiverId === receiverId)
+                (message.senderId.toString() === receiverId.toString() && message.receiverId.toString() === user?.id.toString()) ||
+                (message.senderId.toString() === user?.id.toString() && message.receiverId.toString() === receiverId.toString())
             ) {
                 setMessages(prev => {
                     if (prev.find(m => m.id === message.id)) return prev;
@@ -136,8 +152,11 @@ const ChatScreen = () => {
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
                 <View className="flex-1">
-                    <Text className="font-bold text-lg text-gray-900">{receiverName}</Text>
-                    {/* Could add online status here */}
+                    <View className="flex-row items-center">
+                        <Text className="font-bold text-lg text-gray-900 mr-2">{receiverName}</Text>
+                        <View className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                    </View>
+                    <Text className="text-xs text-gray-500">{isConnected ? 'Online' : 'Disconnected (Reconnecting...)'}</Text>
                 </View>
             </View>
 

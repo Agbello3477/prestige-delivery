@@ -47,8 +47,11 @@ export default function RecordProofScreen() {
                             {
                                 text: "Use Photo",
                                 onPress: () => {
-                                    if (onProofRecorded) onProofRecorded(photo.uri);
-                                    navigation.goBack();
+                                    navigation.navigate({
+                                        name: 'RiderDashboard',
+                                        params: { proofUri: photo.uri, proofType: 'PICTURE' },
+                                        merge: true
+                                    });
                                 }
                             }
                         ]

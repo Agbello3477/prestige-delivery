@@ -5,28 +5,22 @@ import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { deliveryService } from '../services/delivery.service';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import api from '../services/api';
 import { io, Socket } from 'socket.io-client';
 
 // Extract base URL from api service
 // @ts-ignore
-const SOCKET_URL = api.defaults.baseURL?.replace('/api', '') || 'http://2.3.0.190:4000';
+const SOCKET_URL = api.defaults.baseURL?.replace('/api', '') || 'https://prestige-delivery-backend.onrender.com';
 
 const RiderDashboardScreen = () => {
     const { user } = useAuth();
     const navigation = useNavigation();
+    const route = useRoute();
     const [isOnline, setIsOnline] = useState(user?.isOnline || false);
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [activeDelivery, setActiveDelivery] = useState<any>(null);
-
-    // Sync local state with user prop if it changes
-    useEffect(() => {
-        if (user?.isOnline !== undefined) {
-            setIsOnline(user.isOnline);
-        }
-    }, [user]);
 
     const toggleOnlineStatus = async (value: boolean) => {
         setIsOnline(value); // Optimistic update
@@ -68,10 +62,23 @@ const RiderDashboardScreen = () => {
     // Global Socket for System Notifications
     useEffect(() => {
         if (!user) return;
-        const socketConnection: Socket = io(SOCKET_URL);
+        const socketConnection: Socket = io(SOCKET_URL, {
+            transports: ['websocket', 'polling'],
+            forceNew: true
+        });
 
         socketConnection.on('connect', () => {
+            console.log('Connected to socket server');
             socketConnection.emit('join', user.id.toString());
+        });
+
+        socketConnection.on('connect_error', (error: any) => {
+            console.error('Socket Connection Error:', error);
+            // Optional: Alert.alert('Connection Warning', 'Real-time updates may be delayed. Please check your internet.');
+        });
+
+        socketConnection.on('error', (error: any) => {
+            console.error('Socket General Error:', error);
         });
 
         socketConnection.on('system_notification', (data: { title: string, message: string, type: string }) => {
@@ -87,7 +94,16 @@ const RiderDashboardScreen = () => {
     useFocusEffect(
         useCallback(() => {
             checkActiveDelivery();
-        }, [checkActiveDelivery])
+            // Check for proof parameter from Camera screen
+            if (activeDelivery && (route.params as any)?.proofUri) {
+                const uri = (route.params as any).proofUri;
+                const type = (route.params as any).proofType || 'PICTURE';
+                console.log(`[DEBUG] Received proof from params: ${type}`, uri);
+                handleProofUpload(uri, type as any);
+                // Clear the parameter to avoid re-uploading on next focus
+                navigation.setParams({ proofUri: undefined } as any);
+            }
+        }, [checkActiveDelivery, (route.params as any)?.proofUri, activeDelivery])
     );
 
     useEffect(() => {
@@ -136,6 +152,7 @@ const RiderDashboardScreen = () => {
     const handleAccept = async (id: string) => {
         try {
             await deliveryService.updateDeliveryStatus(id, 'ACCEPTED');
+            console.log('[DEBUG] Delivery ACCEPTED successfully:', id);
             Alert.alert('Success', 'Delivery accepted!');
             checkActiveDelivery();
         } catch (error) {
@@ -205,7 +222,13 @@ const RiderDashboardScreen = () => {
                 </View>
             </View>
             <View className="mb-2"><Text className="text-gray-700">{item.pickupAddress}</Text></View>
-            <View className="mb-4"><Text className="text-gray-700">{item.dropoffAddress}</Text></View>
+            <View className="mb-2"><Text className="text-gray-700">{item.dropoffAddress}</Text></View>
+            {item.deliveryNote && (
+                <View className="mb-4 bg-yellow-50 p-2 rounded border border-yellow-200">
+                    <Text className="text-yellow-800 text-xs font-bold uppercase mb-1">Instruction Note:</Text>
+                    <Text className="text-yellow-900 text-sm italic">"{item.deliveryNote}"</Text>
+                </View>
+            )}
             <View className="bg-orange-50 p-2 rounded-lg border border-orange-100 mb-4 flex-row justify-between items-center">
                 <Text className="text-orange-800 text-xs font-bold">COLLECT PAYMENT VIA:</Text>
                 <Text className="text-orange-900 font-bold">
@@ -258,6 +281,9 @@ const RiderDashboardScreen = () => {
                     </TouchableOpacity>
                 </View>
 
+                {/* DEBUG VERSION MARKER */}
+                <Text className="text-[8px] text-gray-200 mb-1">RiderSDK: v1.0.7-final-debug</Text>
+
                 {/* Contact Options (Moved off the map) */}
                 {activeDelivery.customer?.phone && (
                     <View className="flex-row justify-between mb-4 space-x-2">
@@ -284,6 +310,13 @@ const RiderDashboardScreen = () => {
 
                 <View className="mb-4"><Text className="text-xs text-gray-400">Pickup: {activeDelivery.pickupAddress}</Text></View>
                 <View className="mb-4"><Text className="text-xs text-gray-400">Dropoff: {activeDelivery.dropoffAddress}</Text></View>
+
+                {activeDelivery.deliveryNote && (
+                    <View className="mb-6 bg-yellow-50 p-3 rounded-xl border border-yellow-200">
+                        <Text className="text-yellow-800 text-xs font-bold uppercase mb-1">Customer Instructions:</Text>
+                        <Text className="text-yellow-900 text-base italic">"{activeDelivery.deliveryNote}"</Text>
+                    </View>
+                )}
 
                 <View className="bg-orange-50 p-3 rounded-xl border border-orange-200 mb-6 flex-row justify-between items-center">
                     <Text className="text-orange-800 text-sm font-bold">EXPECTED PAYMENT:</Text>
@@ -333,9 +366,7 @@ const RiderDashboardScreen = () => {
                                         {
                                             text: "1. Take Picture",
                                             onPress: () => (navigation as any).navigate('RecordProof', {
-                                                onProofRecorded: async (uri: string) => {
-                                                    await handleProofUpload(uri, 'PICTURE');
-                                                }
+                                                targetDeliveryId: activeDelivery.id
                                             })
                                         },
                                         {

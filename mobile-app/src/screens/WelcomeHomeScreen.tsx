@@ -87,7 +87,7 @@ const WelcomeHomeScreen = () => {
 
             <View className="py-6 items-center bg-gray-50">
                 <Text className="text-gray-400 text-xs font-medium">Powered by: MaSha Secure Tech</Text>
-                <Text className="text-gray-300 text-[10px] mt-1">v1.0.5-fixed-final</Text>
+                <Text className="text-gray-300 text-[10px] mt-1">v1.0.9-final-release</Text>
             </View>
         </SafeAreaView>
     );

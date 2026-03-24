@@ -66,7 +66,7 @@ const ChatPage: React.FC = () => {
     const updateRecentChats = React.useCallback((message: Message) => {
         setRecentChats(prevChats => {
             // Find if this partner already exists
-            const partnerId = message.senderId === currentUser?.id ? message.receiverId : message.senderId;
+            const partnerId = message.senderId.toString() === currentUser?.id.toString() ? message.receiverId : message.senderId;
             const existingChatIndex = prevChats.findIndex(c => c.partner.id === partnerId);
 
             const updatedChats = [...prevChats];
@@ -153,7 +153,7 @@ const ChatPage: React.FC = () => {
 
         const handleReceive = (message: Message) => {
             const currentId = activeChatIdRef.current;
-            if (currentId && (message.senderId === currentId || message.receiverId === currentId)) {
+            if (currentId && (message.senderId.toString() === currentId.toString() || message.receiverId.toString() === currentId.toString())) {
                 setMessages(prev => {
                     if (prev.find(m => m.id === message.id)) return prev;
                     return [...prev, message];

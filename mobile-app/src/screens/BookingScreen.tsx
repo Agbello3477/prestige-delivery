@@ -150,9 +150,11 @@ const BookingScreen = ({ navigation }: any) => {
             if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
                 const detailedErrors = error.response.data.errors.map((err: any) => `${err.path.join('.')}: ${err.message}`).join('\n');
                 errorMessage += `\n\nDetails:\n${detailedErrors}`;
+            } else if (error.response?.data?.error) {
+                errorMessage += `\n\nError: ${error.response.data.error}`;
             }
 
-            Alert.alert('Booking Error', errorMessage);
+            Alert.alert('Booking Failed', errorMessage);
         } finally {
             setLoading(false);
         }
