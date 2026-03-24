@@ -18,8 +18,9 @@ export const initSocket = (httpServer: HttpServer) => {
 
         // Join a room based on user ID (for private messages)
         socket.on('join', (userId: string) => {
+            console.log(`[DEBUG] User attempting to join room: ${userId}`);
             socket.join(userId);
-            console.log(`User ${userId} joined room ${userId}`);
+            console.log(`[DEBUG] User ${userId} joined room ${userId}`);
         });
 
         // Handle sending messages

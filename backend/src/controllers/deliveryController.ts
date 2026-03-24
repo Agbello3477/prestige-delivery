@@ -231,15 +231,28 @@ export const getPendingDeliveries = async (req: any, res: Response) => {
 export const updateDeliveryStatus = async (req: any, res: Response) => {
     try {
         const { id } = req.params;
-        const { status, proofType } = req.body; // proofUrl handled via file upload if present
+        const { status, proofType } = req.body; 
         const riderId = req.user.id;
 
+        console.log(`[DEBUG] updateDeliveryStatus START: id=${id}, status=${status}, proofType=${proofType}`);
+        console.log(`[DEBUG] req.body Keys:`, Object.keys(req.body));
+        console.log(`[DEBUG] req.files:`, req.files ? Object.keys(req.files) : 'NONE');
+
         // Handle file upload if present
-        let proofUrl = req.body.proofUrl; // If sent as string (e.g. signature base64)
+        let proofUrl = req.body.proofUrl; 
         if (req.files) {
             const files = req.files as { [fieldname: string]: Express.Multer.File[] };
             if (files['proof']?.[0]) {
                 proofUrl = files['proof'][0].path;
+                console.log(`[DEBUG] File detected via Multer:`, {
+                    fieldname: files['proof'][0].fieldname,
+                    originalname: files['proof'][0].originalname,
+                    mimetype: files['proof'][0].mimetype,
+                    size: files['proof'][0].size,
+                    path: files['proof'][0].path // This should be the Cloudinary URL
+                });
+            } else {
+                console.log(`[DEBUG] req.files object exists but 'proof' field is missing or empty`);
             }
         }
 
