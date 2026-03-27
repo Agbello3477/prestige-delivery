@@ -79,7 +79,7 @@ const ChangePasswordScreen = () => {
                         <TextInput
                             className="flex-1 ml-3 text-gray-900"
                             placeholder="Enter current password"
-                            placeholderTextColor="#64748b"
+                            placeholderTextColor="#475569"
                             cursorColor="#0284c7"
                             secureTextEntry={!showPasswords.old}
                             value={oldPassword}
@@ -97,7 +97,7 @@ const ChangePasswordScreen = () => {
                         <TextInput
                             className="flex-1 ml-3 text-gray-900"
                             placeholder="Enter new password"
-                            placeholderTextColor="#64748b"
+                            placeholderTextColor="#475569"
                             cursorColor="#0284c7"
                             secureTextEntry={!showPasswords.new}
                             value={newPassword}

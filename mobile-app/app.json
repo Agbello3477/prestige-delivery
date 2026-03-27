@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "mobile-app",
+    "name": "Prestige Delivery and Logistics Services",
     "slug": "mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.jpeg",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -21,7 +21,7 @@
     "android": {
       "package": "com.prestige.delivery",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo.jpeg",
         "backgroundColor": "#ffffff"
       },
       "config": {

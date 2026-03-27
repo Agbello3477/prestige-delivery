@@ -48,7 +48,7 @@ const LoginScreen = () => {
                         <TextInput
                             className="w-full border border-gray-300 rounded-xl p-4 text-gray-900 bg-gray-50"
                             placeholder="Enter your email"
-                            placeholderTextColor="#94a3b8"
+                            placeholderTextColor="#475569"
                             cursorColor="#0284c7"
                             value={email}
                             onChangeText={setEmail}
@@ -62,7 +62,7 @@ const LoginScreen = () => {
                         <TextInput
                             className="w-full border border-gray-300 rounded-xl p-4 text-gray-900 bg-gray-50 mb-1"
                             placeholder="Enter your password"
-                            placeholderTextColor="#94a3b8"
+                            placeholderTextColor="#475569"
                             cursorColor="#0284c7"
                             value={password}
                             onChangeText={setPassword}
