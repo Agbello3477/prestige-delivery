@@ -232,29 +232,37 @@ const RegisterScreen = () => {
 
                 <View className="mb-4">
                     <TextInput
-                        className="w-full border border-gray-300 rounded-xl p-4 bg-gray-50 mb-4"
+                        className="w-full border border-gray-300 rounded-xl p-4 text-gray-900 bg-gray-50 mb-4"
                         placeholder="Full Name"
+                        placeholderTextColor="#94a3b8"
+                        cursorColor="#0284c7"
                         value={formData.name}
                         onChangeText={(text) => setFormData({ ...formData, name: text })}
                     />
                     <TextInput
-                        className="w-full border border-gray-300 rounded-xl p-4 bg-gray-50 mb-4"
+                        className="w-full border border-gray-300 rounded-xl p-4 text-gray-900 bg-gray-50 mb-4"
                         placeholder="Email Address"
+                        placeholderTextColor="#94a3b8"
+                        cursorColor="#0284c7"
                         value={formData.email}
                         onChangeText={(text) => setFormData({ ...formData, email: text })}
                         autoCapitalize="none"
                         keyboardType="email-address"
                     />
                     <TextInput
-                        className="w-full border border-gray-300 rounded-xl p-4 bg-gray-50 mb-4"
+                        className="w-full border border-gray-300 rounded-xl p-4 text-gray-900 bg-gray-50 mb-4"
                         placeholder="Phone Number"
+                        placeholderTextColor="#94a3b8"
+                        cursorColor="#0284c7"
                         value={formData.phone}
                         onChangeText={(text) => setFormData({ ...formData, phone: text })}
                         keyboardType="phone-pad"
                     />
                     <TextInput
-                        className="w-full border border-gray-300 rounded-xl p-4 bg-gray-50 mb-4"
+                        className="w-full border border-gray-300 rounded-xl p-4 text-gray-900 bg-gray-50 mb-4"
                         placeholder="Password"
+                        placeholderTextColor="#94a3b8"
+                        cursorColor="#0284c7"
                         value={formData.password}
                         onChangeText={(text) => setFormData({ ...formData, password: text })}
                         secureTextEntry
@@ -284,20 +292,26 @@ const RegisterScreen = () => {
                             <Text style={{ fontWeight: 'bold', color: '#111827', marginBottom: 16 }}>Rider Details</Text>
 
                             <TextInput
-                                style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                 placeholder="NIN Number"
+                                placeholderTextColor="#9ca3af"
+                                cursorColor="#0284c7"
                                 value={formData.nin}
                                 onChangeText={(text) => setFormData({ ...formData, nin: text })}
                             />
                             <TextInput
-                                style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                 placeholder="Residential Address"
+                                placeholderTextColor="#9ca3af"
+                                cursorColor="#0284c7"
                                 value={formData.address}
                                 onChangeText={(text) => setFormData({ ...formData, address: text })}
                             />
                             <TextInput
-                                style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                 placeholder="State of Origin"
+                                placeholderTextColor="#9ca3af"
+                                cursorColor="#0284c7"
                                 value={formData.stateOfOrigin}
                                 onChangeText={(text) => setFormData({ ...formData, stateOfOrigin: text })}
                             />
@@ -352,20 +366,26 @@ const RegisterScreen = () => {
                             {formData.isBikeOwner ? (
                                 <View style={{ marginBottom: 16 }}>
                                     <TextInput
-                                        style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                        style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                         placeholder="Bike Model"
+                                        placeholderTextColor="#9ca3af"
+                                        cursorColor="#0284c7"
                                         value={formData.model}
                                         onChangeText={(text) => setFormData({ ...formData, model: text })}
                                     />
                                     <TextInput
-                                        style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                        style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                         placeholder="Bike Plate Number"
+                                        placeholderTextColor="#9ca3af"
+                                        cursorColor="#0284c7"
                                         value={formData.plateNumber}
                                         onChangeText={(text) => setFormData({ ...formData, plateNumber: text })}
                                     />
                                     <TextInput
-                                        style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB' }}
+                                        style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', color: '#111827' }}
                                         placeholder="Bike Chassis Number"
+                                        placeholderTextColor="#9ca3af"
+                                        cursorColor="#0284c7"
                                         value={formData.chassisNumber}
                                         onChangeText={(text) => setFormData({ ...formData, chassisNumber: text })}
                                     />
@@ -376,34 +396,44 @@ const RegisterScreen = () => {
                                 <Text style={{ fontWeight: 'bold', color: '#111827', marginBottom: 16 }}>Guarantor Information</Text>
                                 
                                 <TextInput
-                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                     placeholder="Guarantor Full Name"
+                                    placeholderTextColor="#9ca3af"
+                                    cursorColor="#0284c7"
                                     value={formData.guarantorName}
                                     onChangeText={(text) => setFormData({ ...formData, guarantorName: text })}
                                 />
                                 <TextInput
-                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                     placeholder="Guarantor Phone Number"
+                                    placeholderTextColor="#9ca3af"
+                                    cursorColor="#0284c7"
                                     value={formData.guarantorPhone}
                                     onChangeText={(text) => setFormData({ ...formData, guarantorPhone: text })}
                                     keyboardType="phone-pad"
                                 />
                                 <TextInput
-                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                     placeholder="Guarantor NIN"
+                                    placeholderTextColor="#9ca3af"
+                                    cursorColor="#0284c7"
                                     value={formData.guarantorNin}
                                     onChangeText={(text) => setFormData({ ...formData, guarantorNin: text })}
                                     keyboardType="numeric"
                                 />
                                 <TextInput
-                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                     placeholder="Guarantor Relationship (e.g. Father, Uncle)"
+                                    placeholderTextColor="#9ca3af"
+                                    cursorColor="#0284c7"
                                     value={formData.guarantorRelationship}
                                     onChangeText={(text) => setFormData({ ...formData, guarantorRelationship: text })}
                                 />
                                 <TextInput
-                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                     placeholder="Guarantor Address"
+                                    placeholderTextColor="#9ca3af"
+                                    cursorColor="#0284c7"
                                     value={formData.guarantorAddress}
                                     onChangeText={(text) => setFormData({ ...formData, guarantorAddress: text })}
                                     multiline
@@ -414,21 +444,27 @@ const RegisterScreen = () => {
                                 <Text style={{ fontWeight: 'bold', color: '#111827', marginBottom: 16 }}>Bank Details</Text>
                                 
                                 <TextInput
-                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                     placeholder="Bank Name"
+                                    placeholderTextColor="#9ca3af"
+                                    cursorColor="#0284c7"
                                     value={formData.bankName}
                                     onChangeText={(text) => setFormData({ ...formData, bankName: text })}
                                 />
                                 <TextInput
-                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                     placeholder="Account Number"
+                                    placeholderTextColor="#9ca3af"
+                                    cursorColor="#0284c7"
                                     value={formData.accountNumber}
                                     onChangeText={(text) => setFormData({ ...formData, accountNumber: text })}
                                     keyboardType="numeric"
                                 />
                                 <TextInput
-                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16 }}
+                                    style={{ width: '100%', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, padding: 16, backgroundColor: '#F9FAFB', marginBottom: 16, color: '#111827' }}
                                     placeholder="Account Name"
+                                    placeholderTextColor="#9ca3af"
+                                    cursorColor="#0284c7"
                                     value={formData.accountName}
                                     onChangeText={(text) => setFormData({ ...formData, accountName: text })}
                                 />
