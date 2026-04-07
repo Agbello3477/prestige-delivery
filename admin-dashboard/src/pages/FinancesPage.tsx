@@ -18,9 +18,12 @@ import {
     Tooltip, 
     ResponsiveContainer
 } from 'recharts';
-import { getFinanceStats, FinanceStats, FinanceFilters } from '../services/finance.service';
-import { getPartners, Partner } from '../services/partner.service';
-import { getRiders, Rider } from '../services/rider.service';
+import { getFinanceStats } from '../services/finance.service';
+import type { FinanceStats, FinanceFilters } from '../services/finance.service';
+import { getPartners } from '../services/partner.service';
+import type { Partner } from '../services/partner.service';
+import { getRiders } from '../services/rider.service';
+import type { Rider } from '../services/rider.service';
 
 const FinancesPage: React.FC = () => {
     const [stats, setStats] = useState<FinanceStats | null>(null);
