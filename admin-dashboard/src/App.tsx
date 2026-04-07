@@ -2,7 +2,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Login from './pages/Login';
 import Register from './pages/Register';
 import PartnersPage from './pages/PartnersPage';
 import Home from './pages/Home';
@@ -21,6 +20,7 @@ import PartnerMenuPage from './pages/partner/PartnerMenuPage';
 import PartnerOrdersPage from './pages/partner/PartnerOrdersPage';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import FinancesPage from './pages/FinancesPage';
 
 const ProtectedRoute = ({ children, allowedRoles = ['ADMIN'] }: { children: ReactNode, allowedRoles?: string[] }) => {
   const { user, loading } = useAuth();
@@ -45,7 +45,7 @@ function App() {
         <div className="flex flex-col min-h-screen">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Navigate to="/" replace />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/register" element={
@@ -108,6 +108,13 @@ function App() {
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <DashboardLayout>
                   <SettingsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/finances" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout>
+                  <FinancesPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

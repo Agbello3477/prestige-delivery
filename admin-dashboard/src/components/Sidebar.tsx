@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Package, Settings, LogOut, MessageSquare, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Package, Settings, LogOut, MessageSquare, ClipboardList, DollarSign } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/Logo prestage.jpeg';
 
@@ -38,6 +38,10 @@ const Sidebar = () => {
                 <NavLink to="/dashboard/deliveries" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
                     <Package className="w-5 h-5 mr-3" />
                     Deliveries
+                </NavLink>
+                <NavLink to="/dashboard/finances" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
+                    <DollarSign className="w-5 h-5 mr-3" />
+                    Finances
                 </NavLink>
                 <NavLink to="/dashboard/reconciliation" className={({ isActive }) => `flex items-center px-4 py-2 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg transition-colors ${isActive ? 'bg-brand-800 text-white' : ''}`}>
                     <LayoutDashboard className="w-5 h-5 mr-3" />
