@@ -110,13 +110,14 @@ export const getFinanceStats = async (req: Request, res: Response) => {
             }
             
             if ('price' in item) {
-                const price = Number(item.price || 0);
+                const price = Number((item as any).price || 0);
                 chartDataMap[dateKey].revenue += price;
                 chartDataMap[dateKey].profit += price * 0.2;
             } else {
-                const itemsAmount = Number(item.totalAmount || 0);
-                const deliveryFee = Number(item.deliveryFee || 0);
-                const commissionRate = (item.partner?.agreedPercentage || 15) / 100;
+                const itemsAmount = Number((item as any).totalAmount || 0);
+                const deliveryFee = Number((item as any).deliveryFee || 0);
+                const partner = (item as any).partner;
+                const commissionRate = (partner?.agreedPercentage || 15) / 100;
                 
                 chartDataMap[dateKey].revenue += itemsAmount + deliveryFee;
                 chartDataMap[dateKey].profit += (itemsAmount * commissionRate) + (deliveryFee * 0.2);
